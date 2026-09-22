@@ -205,6 +205,27 @@ a{color:var(--accent)}
   .go-down{left:8px;right:auto;bottom:22px;height:40px;padding:0 16px;font-size:14px}
 }
 
+/* ---------- Bandeau d'état ---------- */
+.status-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;color:#fff;background:var(--sb-c,var(--ok))}
+.status-banner .sb-dot{width:9px;height:9px;border-radius:50%;background:#fff;flex:none;opacity:.9}
+.status-banner .sb-text{display:flex;flex-wrap:wrap;column-gap:8px;row-gap:0;align-items:baseline;max-width:1200px}
+.status-banner .sb-trend{opacity:.85;font-size:13px}
+@media (max-width:640px){.status-banner{padding:8px 12px;font-size:13px}.status-banner .sb-trend{font-size:12px}}
+
+/* ---------- Actu & réseaux sociaux ---------- */
+.actu{margin-top:30px}
+.actu-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+@media (max-width:760px){.actu-grid{grid-template-columns:1fr}}
+.actu-list{display:flex;flex-direction:column;gap:0}
+.actu-item{display:block;padding:12px 14px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.actu-item:last-child{border-bottom:0}
+.actu-item:hover{background:var(--surface-2)}
+.actu-item .a-title{display:block;font-weight:600;font-size:14.5px;margin-bottom:3px}
+.actu-item .a-meta{color:var(--muted);font-size:12.5px}
+.actu-empty{padding:16px;color:var(--muted);font-size:14px}
+.tweets{display:flex;flex-direction:column;gap:12px}
+.tweets .tw-empty{color:var(--muted);font-size:13.5px;padding:2px}
+
 /* ---------- Détails / onglets ---------- */
 .wrap{max-width:1200px;margin:0 auto;padding:0 16px}
 main{padding:22px 0 10px}
@@ -222,7 +243,7 @@ h3{font-size:16px;margin:22px 0 10px}
 .controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .controls input,.controls select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:0}
 .controls input{flex:1 1 220px}
-.controls select{flex:0 1 220px}
+.controls select{flex:1 1 280px}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
@@ -364,6 +385,11 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   <div class="overlay" id="overlay"><div><div class="spinner"></div>Chargement des ~10 000 stations…</div></div>
 </div>
 
+<div class="status-banner" id="status-banner" role="status">
+  <span class="sb-dot" aria-hidden="true"></span>
+  <span class="sb-text"><strong id="sb-title">Chargement de la situation…</strong><span class="sb-trend" id="sb-trend"></span></span>
+</div>
+
 <main class="wrap" id="details">
   <div class="scope" id="scope"></div>
   <div class="tabs" role="tablist">
@@ -376,12 +402,12 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   <!-- Onglet 1 : territoires -->
   <section class="tabpanel" id="p-terr" role="tabpanel" aria-labelledby="tab-terr">
     <div class="controls">
-      <input type="search" id="q" placeholder="Rechercher une région, un département ou un n° (ex. 37)" aria-label="Recherche">
-      <select id="f-region" aria-label="Région"><option value="">Toutes les régions</option></select>
-      <div class="seg" role="group" aria-label="Niveau">
-        <button type="button" data-level="dep" aria-pressed="true">Départements</button>
-        <button type="button" data-level="reg" aria-pressed="false">Régions</button>
-      </div>
+      <select id="terr-sel" aria-label="Territoire">
+        <option value="">Tous les départements</option>
+        <option value="allreg">Toutes les régions</option>
+        <optgroup label="Régions" id="og-reg"></optgroup>
+        <optgroup label="Départements" id="og-dep"></optgroup>
+      </select>
     </div>
     <div class="card"><div class="tscroll">
       <table id="t-terr">
@@ -469,6 +495,15 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       <div class="tip" id="prix-tip" hidden></div>
     </div>
     <p class="hint">Moyenne des prix affichés par les stations (prix mis à jour depuis moins de 7 jours), en euros par litre. Historique reconstitué à partir des archives officielles puis complété chaque matin ; le dernier point correspond aux données en direct.</p>
+  </section>
+
+  <!-- Actualités & réseaux sociaux -->
+  <section class="actu" id="actu">
+    <h2>Actualités sur la pénurie</h2>
+    <div class="actu-grid">
+      <div class="card"><div class="actu-list" id="actu-list"><div class="actu-empty">Chargement des actualités…</div></div></div>
+      <div class="tweets" id="tweets"></div>
+    </div>
   </section>
 
   <footer>
@@ -785,13 +820,20 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     return [...m.values()];
   }
 
+  function parseTerrSel() {
+    const v = $("#terr-sel").value;
+    if (v === "allreg") return {level:"reg", name:""};
+    if (v.startsWith("dep:")) return {level:"dep", name:v.slice(4)};
+    if (v.startsWith("reg:")) return {level:"reg", name:v.slice(4)};
+    return {level:"dep", name:""};
+  }
+  const selRegion = () => { const s = parseTerrSel(); return s.level === "reg" ? s.name : ""; };
+
   let terrRows = [];
   function drawTerritories() {
-    const q = norm($("#q").value);
-    const fr = $("#f-region").value;
-    terrRows = aggregate().filter(a =>
-      (!fr || a.reg === fr) &&
-      (!q || norm(a.name).includes(q) || (a.code && a.code.toLowerCase() === q) || norm(a.reg).includes(q)));
+    const sel = parseTerrSel();
+    level = sel.level;
+    terrRows = aggregate().filter(a => !sel.name || a.name === sel.name);
     terrRows.sort((a, b) => {
       const va = a[sortKey], vb = b[sortKey];
       if (va == null) return 1; if (vb == null) return -1;
@@ -818,8 +860,8 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     }).join("");
   }
 
-  function scopedRuptures() { return stations.filter(s => effStatus(s) !== "o" && inScope(s) && (scope || !$("#f-region").value || s.reg === $("#f-region").value)); }
-  const scopeName = () => scope ? scope.key : ($("#f-region").value || "France entière");
+  function scopedRuptures() { return stations.filter(s => effStatus(s) !== "o" && inScope(s) && (scope || !selRegion() || s.reg === selRegion())); }
+  const scopeName = () => scope ? scope.key : (selRegion() || "France entière");
 
   function drawStations() {
     const list = scopedRuptures();
@@ -980,6 +1022,32 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     for (const x of releves3h) if (Math.abs(x.d - target) <= 2 * 36e5 && (!best || Math.abs(x.d - target) < Math.abs(best.d - target))) best = x;
     return best ? {d: best.d, v: histValue(best)} : null;
   }
+
+  // ---------- Bandeau d'état national ----------
+  const SEUILS_ETAT = [
+    {max:10,  cls:"ok",     titre:"Situation normale",
+     msg:"Approvisionnement normal sur l'ensemble du territoire."},
+    {max:15,  cls:"y",      titre:"Tensions localisées",
+     msg:"Des tensions apparaissent dans certaines zones : mieux vaut vérifier la disponibilité avant de se déplacer dans les secteurs concernés."},
+    {max:25,  cls:"o",      titre:"Situation dégradée",
+     msg:"La situation se dégrade dans plusieurs régions : certaines stations sont à sec, pensez à faire le plein en avance et à repérer une station de secours."},
+    {max:35,  cls:"o2",     titre:"Situation très dégradée",
+     msg:"Situation tendue sur une large partie du territoire : les stations encore approvisionnées peuvent être prises d'assaut, avec des files d'attente et un risque de rupture rapide de leurs stocks."},
+    {max:Infinity, cls:"r", titre:"Situation critique",
+     msg:"Pénurie généralisée sur le territoire. Dans les stations où il reste du carburant, la file d'attente peut atteindre plusieurs heures aux heures de pointe."},
+  ];
+  const SB_COLORS = {ok:"var(--ok)", y:"var(--lv-y)", o:"var(--partial)", o2:"var(--lv-o)", r:"var(--total)"};
+  function drawStatusBanner() {
+    const pct = pctOf(liveValue(null));
+    const banner = $("#status-banner");
+    if (pct == null) { $("#sb-title").textContent = "Chargement de la situation…"; return; }
+    const etat = SEUILS_ETAT.find(e => pct <= e.max);
+    banner.style.setProperty("--sb-c", SB_COLORS[etat.cls]);
+    $("#sb-title").textContent = `${etat.titre} (${pf.format(pct)} % des stations touchées) — ${etat.msg}`;
+    const h = h3At(24), p24 = h && pctOf(h.v);
+    $("#sb-trend").innerHTML = p24 != null ? fmtPts(pct - p24) + " <span style=\"opacity:.8\">sur 24 h</span>" : "";
+  }
+
   function drawH3() {
     const box = $("#h3");
     document.querySelectorAll("#h3-range button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.h === h3Range));
@@ -1076,7 +1144,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     return {p, t};
   }
   function drawNew() {
-    const box = $("#new"), list = stations.filter(s => s.status !== "o" && inScope(s) && (scope || !$("#f-region").value || s.reg === $("#f-region").value));
+    const box = $("#new"), list = stations.filter(s => s.status !== "o" && inScope(s) && (scope || !selRegion() || s.reg === selRegion()));
     const byDate = Object.fromEntries(history.map(h => [h.date, h]));
     const days = [];
     for (let i = 13; i >= 0; i--) {
@@ -1261,7 +1329,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   }
   function drawActiveChart() { if (activeTab === "evo") { drawEvo(); drawH3(); } else if (activeTab === "new") drawNew(); else if (activeTab === "prix") drawPrice(); }
   function redrawDetails() { drawScope(); drawTerritories(); drawStations(); drawActiveChart(); }
-  function redraw() { drawMap(); drawTicker(); redrawDetails(); }
+  function redraw() { drawMap(); drawTicker(); drawStatusBanner(); redrawDetails(); }
 
   // ---------- Interactions ----------
   const chips = $("#fuels");
@@ -1311,13 +1379,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     document.querySelectorAll(".tabpanel").forEach(p => p.hidden = p.id !== "p-" + activeTab);
     drawActiveChart();
   }));
-  $("#q").addEventListener("input", drawTerritories);
-  $("#f-region").addEventListener("change", () => { scope = null; redrawDetails(); });
-  document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
-    level = b.dataset.level;
-    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", x === b));
-    drawTerritories();
-  }));
+  $("#terr-sel").addEventListener("change", () => { scope = null; redrawDetails(); });
   $("#t-terr thead").addEventListener("click", e => {
     const th = e.target.closest("th[data-k]"); if (!th) return;
     const k = th.dataset.k;
@@ -1358,6 +1420,27 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   // Facultatif : sans ce fichier, les popups affichent simplement l'adresse comme avant.
   let stationNames = {};
   fetch("enseignes.json").then(r => r.ok ? r.json() : {}).then(j => { stationNames = (j && j.stations) || {}; }).catch(() => {});
+
+  // Actualités (actu.json, généré par scripts/actu.py depuis Google Actualités) et tweets
+  // épinglés à la main (tweets.json : {"tweets":["https://x.com/…/status/…", …]}).
+  fetch("actu.json").then(r => r.ok ? r.json() : null).then(j => {
+    const box = $("#actu-list"), arts = (j && j.articles) || [];
+    if (!arts.length) { box.innerHTML = `<div class="actu-empty">Aucun article pour le moment.</div>`; return; }
+    box.innerHTML = arts.map(a => `
+      <a class="actu-item" href="${esc(a.link)}" target="_blank" rel="noopener">
+        <span class="a-title">${esc(a.title)}</span>
+        <span class="a-meta">${esc(a.source || "")}${a.date ? " · " + esc(a.date) : ""}</span>
+      </a>`).join("");
+  }).catch(() => { $("#actu-list").innerHTML = `<div class="actu-empty">Actualités indisponibles pour le moment.</div>`; });
+
+  fetch("tweets.json").then(r => r.ok ? r.json() : null).then(j => {
+    const box = $("#tweets"), urls = (j && j.tweets) || [];
+    if (!urls.length) { box.innerHTML = `<div class="tw-empty">Pas de témoignage épinglé pour le moment.</div>`; return; }
+    box.innerHTML = urls.map(u => `<blockquote class="twitter-tweet" data-theme="${document.documentElement.dataset.theme === "dark" ? "dark" : "light"}"><a href="${esc(u)}"></a></blockquote>`).join("");
+    const s = document.createElement("script");
+    s.src = "https://platform.twitter.com/widgets.js"; s.async = true;
+    document.body.appendChild(s);
+  }).catch(() => {});
   let releves3h = [];                       // [{ts, all, p, t, deps}]
   async function loadH3() {
     try {
@@ -1389,9 +1472,11 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       stations = rows.map(r => parseStation(r, hasRuptureFields, now)).filter(Boolean);
       liveCache = null;
       const regs = [...new Set(stations.map(s => s.reg).filter(r => r !== "Non renseignée"))].sort((a, b) => a.localeCompare(b, "fr"));
-      const cur = $("#f-region").value;
-      $("#f-region").innerHTML = `<option value="">Toutes les régions</option>` +
-        regs.map(r => `<option ${r === cur ? "selected" : ""}>${esc(r)}</option>`).join("");
+      const deps = [...new Set(stations.map(s => s.depLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+      const cur = $("#terr-sel").value;
+      $("#og-reg").innerHTML = regs.map(r => `<option value="reg:${esc(r)}">${esc(r)}</option>`).join("");
+      $("#og-dep").innerHTML = deps.map(d => `<option value="dep:${esc(d)}">${esc(d)}</option>`).join("");
+      if ([...$("#terr-sel").options].some(o => o.value === cur)) $("#terr-sel").value = cur;
       $("#updated").innerHTML = `Mis à jour le ${fmtDate(new Date())}<span class="auto"> · auto toutes les ${REFRESH_MIN} min</span>`;
       redraw();
       ov.hidden = true;
