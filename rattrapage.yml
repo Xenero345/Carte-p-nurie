@@ -1,0 +1,30 @@
+name: Rattrapage de l'historique (à lancer une fois)
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Nombre de jours à reconstituer"
+        default: "365"
+
+permissions:
+  contents: write
+
+jobs:
+  rattrapage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reconstitution depuis les archives officielles
+        run: python scripts/backfill.py --days ${{ github.event.inputs.days }} --out historique.json --out3h releves-3h.json
+      - name: Enregistrer
+        run: |
+          git config user.name "releve-bot"
+          git config user.email "releve-bot@users.noreply.github.com"
+          git add historique.json releves-3h.json
+          git diff --cached --quiet || git commit -m "Rattrapage de l'historique"
+          git push
