@@ -8,21 +8,24 @@ classe chaque station exactement comme le site (partielle / totale / OK)
 et ajoute (ou remplace) la ligne du jour dans historique.json.
 
 Lancé toutes les 3 heures :
-  - chaque passage ajoute un point dans releves-3h.json (7 derniers jours conservés) ;
-  - le premier passage après 8 h (heure de Paris) écrit aussi la ligne du jour dans historique.json.
+  - chaque passage ajoute un point dans releves-3h.json (32 derniers jours conservés) ;
+  - le premier passage après 8 h (heure de Paris) écrit aussi la ligne du jour dans historique.json ;
+  - chaque passage complète les « nouvelles ruptures » des jours précédents à partir du fichier
+    quotidien officiel (toutes les ruptures déclarées, y compris celles déjà terminées).
 
 Usage : python scripts/snapshot.py [--file flux.json] [--out historique.json] [--out3h releves-3h.json]
 Aucune dépendance externe (bibliothèque standard uniquement).
 """
-import argparse, json, re, sys, unicodedata, urllib.request
+import argparse, io, json, re, sys, unicodedata, urllib.request, zipfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 API = ("https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/"
        "prix-des-carburants-en-france-flux-instantane-v2/exports/json")
-MAX_AGE_DAYS = 21          # identique au site
+MAX_AGE_DAYS = 60          # identique au site : au-delà, une "rupture temporaire" jamais clôturée est ignorée
 KEEP_DAYS = 400            # taille maximale de l'historique
-KEEP_3H_DAYS = 8           # durée conservée pour les relevés toutes les 3 h
+KEEP_3H_DAYS = 32          # durée conservée pour les relevés toutes les 3 h (courbe 7 / 14 / 30 j)
 DAILY_HOUR = 8             # heure (Paris) à partir de laquelle on écrit le relevé du jour
 PRICE_MAX_AGE_DAYS = 7     # prix moyen : seuls les prix mis à jour depuis moins de 7 jours comptent
 FUELS = ["gazole", "e10", "sp95", "sp98", "e85", "gplc"]
@@ -127,12 +130,114 @@ def trim(days):
     days = days[-KEEP_DAYS:]
     for d in days[:-45]:
         d.pop("deps", None)
+        if isinstance(d.get("new"), dict):
+            d["new"].pop("deps", None)
     return days
+
+
+# ---------- Nouvelles ruptures déclarées (événements) ----------
+DAILY_FILE = "https://donnees.roulez-eco.fr/opendata/jour/{ymd}"
+
+
+def station_event(sold_recent, rups, day0, day1):
+    """Pour une station et une journée [day0, day1[ :
+    "t" si elle est passée à sec ce jour-là, "p" si elle est entrée en rupture partielle, sinon None.
+    rups = [(carburant, début, fin)] (ruptures temporaires uniquement)."""
+    starts = sorted(deb for _, deb, _ in rups if day0 <= deb < day1)
+    if not starts:
+        return None
+
+    def active(t):
+        return {k for k, deb, fin in rups
+                if deb <= t and (fin is None or fin > t) and (t - deb).total_seconds() <= MAX_AGE_DAYS * 86400}
+
+    entered = total = False
+    for t in starts:
+        before, after = active(t - timedelta(seconds=1)), active(t)
+        if after and not before:
+            entered = True
+        if after and sold_recent <= after and not (before and sold_recent <= before):
+            total = True
+    return "t" if total else ("p" if entered else None)
+
+
+def events_from_daily_file(ymd, dep_of_cp):
+    """Compte les stations entrées en rupture / passées à sec le jour ymd (AAAAMMJJ),
+    d'après le fichier quotidien officiel (qui contient aussi les ruptures déjà terminées)."""
+    req = urllib.request.Request(DAILY_FILE.format(ymd=ymd), headers={"User-Agent": "carte-penuries/1.0"})
+    with urllib.request.urlopen(req, timeout=180) as r:
+        data = r.read()
+    if data[:2] != b"PK":
+        return None                                  # fichier pas encore publié
+    z = zipfile.ZipFile(io.BytesIO(data))
+    src = z.open(next(n for n in z.namelist() if n.lower().endswith(".xml")))
+    day0 = datetime.strptime(ymd, "%Y%m%d").replace(tzinfo=PARIS)
+    day1 = day0 + timedelta(days=1)
+    out = {"p": 0, "t": 0, "deps": {}, "source": "jour"}
+    for _, el in ET.iterparse(src, events=("end",)):
+        if el.tag != "pdv":
+            continue
+        sold, rups = set(), []
+        for c in el:
+            k = fuel_key(c.get("nom"))
+            if not k:
+                continue
+            if c.tag == "prix":
+                sold.add(k)
+            elif c.tag == "rupture" and (c.get("type") or "").lower().startswith("t"):
+                deb, fin = parse_date(c.get("debut")), parse_date(c.get("fin"))
+                if deb:
+                    rups.append((k, deb, fin))
+        dep = dep_of_cp(el.get("cp"))
+        el.clear()
+        ev = station_event(sold, rups, day0, day1)
+        if ev:
+            out[ev] += 1
+            d = out["deps"].setdefault(dep, [0, 0])
+            d[0 if ev == "p" else 1] += 1
+    return out
+
+
+def dep_from_cp(cp):
+    cp = re.sub(r"\D", "", cp or "").zfill(5)
+    if cp.startswith("97") or cp.startswith("98"): return cp[:3]
+    if cp.startswith("20"): return "2A" if int(cp) < 20200 else "2B"
+    return cp[:2]
+
+
+def update_events(out, now, days_back=3):
+    """Ajoute les nouvelles ruptures des jours récents (hier, avant-hier…) si elles manquent."""
+    path = Path(out)
+    hist = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"days": []}
+    days = {d["date"]: d for d in hist.get("days", [])}
+    changed = False
+    for n in range(1, days_back + 1):
+        day = (now.astimezone(PARIS) - timedelta(days=n)).strftime("%Y-%m-%d")
+        entry = days.get(day)
+        if entry and isinstance(entry.get("new"), dict) and entry["new"].get("source") == "jour":
+            continue
+        try:
+            ev = events_from_daily_file(day.replace("-", ""), dep_from_cp)
+        except Exception as e:  # réseau, fichier absent…
+            print(f"Nouvelles ruptures du {day} : fichier quotidien indisponible ({e})")
+            continue
+        if not ev:
+            continue
+        days.setdefault(day, {"date": day})["new"] = ev
+        changed = True
+        print(f"Nouvelles ruptures du {day} : {ev['p']} partielles, {ev['t']} à sec")
+    if changed:
+        hist = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "days": trim(sorted(days.values(), key=lambda d: d["date"]))}
+        path.write_text(json.dumps(hist, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def save(day, out):
     path = Path(out)
     hist = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"days": []}
+    old = next((d for d in hist.get("days", []) if d.get("date") == day["date"]), None)
+    if old and "new" in old and "new" not in day:
+        day = {**day, "new": old["new"]}          # garde les nouvelles ruptures déjà calculées
     days = [d for d in hist.get("days", []) if d.get("date") != day["date"]]
     days.append(day)
     days.sort(key=lambda d: d["date"])
@@ -186,6 +291,8 @@ def main():
         save(day, a.out)
         msg += " + ligne du jour dans l'historique"
     print(f"{day['date']} {day['time']} : {day['all']} stations, {day['p']} partielles, {day['t']} totales ({msg})")
+    if not a.file:
+        update_events(a.out, now)
 
 
 if __name__ == "__main__":
