@@ -3,8 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Carte des pénuries de carburant</title>
-<meta name="description" content="Carte en temps réel des stations-service en rupture partielle ou totale de carburant en France, d'après les données officielles du ministère de l'Économie.">
+<title>Carte des pénuries de carburant en France – Temps réel</title>
+<meta name="description" content="Carte interactive des stations-service en rupture partielle ou totale de carburant en France. Données officielles du ministère de l'Économie mises à jour toutes les 3 heures.">
+<meta name="keywords" content="pénurie carburant, essence rupture, carte stations service, rupture gazole, pénurie essence France, stations en panne">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://xenero345.github.io/Carte-p-nurie/">
+
+<!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://xenero345.github.io/Carte-p-nurie/">
+<meta property="og:title" content="Carte des pénuries de carburant en France – Temps réel">
+<meta property="og:description" content="Carte interactive des stations-service en rupture partielle ou totale. Données officielles du ministère de l'Économie, mises à jour toutes les 3 heures.">
+<meta property="og:image" content="https://xenero345.github.io/Carte-p-nurie/preview.png">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Pénuries carburant France">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Carte des pénuries de carburant en France – Temps réel">
+<meta name="twitter:description" content="Carte interactive des stations-service en rupture. Données officielles mises à jour toutes les 3 heures.">
+<meta name="twitter:image" content="https://xenero345.github.io/Carte-p-nurie/preview.png">
+
+<!-- Données structurées (Google) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Carte des pénuries de carburant en France",
+  "description": "Carte interactive des stations-service en rupture partielle ou totale de carburant en France, d'après les données officielles du ministère de l'Économie.",
+  "url": "https://xenero345.github.io/Carte-p-nurie/",
+  "applicationCategory": "UtilitiesApplication",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}
+}
+</script>
+
+<script>
+  // Thème choisi par le visiteur (bouton ☀️ / 🌙), appliqué avant l'affichage pour éviter un flash
+  try { var t = localStorage.getItem("theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
@@ -60,7 +98,7 @@ a{color:var(--accent)}
 .up{color:var(--up)} .down{color:var(--down)}
 
 /* ---------- Bandeau défilant ---------- */
-.ticker{position:sticky;top:0;z-index:1000;height:var(--tk);background:var(--ticker-bg);color:var(--ticker-text);overflow:hidden;display:flex;align-items:center;font-size:14px}
+.ticker{position:sticky;top:0;z-index:1100;height:var(--tk);background:var(--ticker-bg);color:var(--ticker-text);overflow:hidden;display:flex;align-items:center;font-size:14px}
 .ticker .live{flex:none;display:flex;align-items:center;gap:6px;padding:0 12px;height:100%;background:var(--total);color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.06em;z-index:1}
 .ticker .live i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.4s infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -81,7 +119,11 @@ a{color:var(--accent)}
 .leaflet-top.leaflet-left{top:118px;bottom:auto}
 .panel{position:absolute;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;font-size:13.5px}
 .brand{top:12px;left:12px;max-width:min(420px,calc(100% - 24px))}
-.brand h1{font-size:19px;margin:0 0 2px;letter-spacing:-.01em;line-height:1.25}
+.brand h1{font-size:16px;margin:0 0 2px;letter-spacing:-.01em;line-height:1.25}
+/* Libellés longs / courts, bloc légende repliable (replier = mobile uniquement) */
+.xs{display:none}
+.dock,.dock-body{display:contents}
+.dock-tg{display:none}
 .brand .sub{color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
 .brand .btn{padding:2px 8px;font-size:12.5px}
 .legend{top:12px;right:12px;min-width:230px}
@@ -121,14 +163,44 @@ a{color:var(--accent)}
   #leg-dep .n{display:none}
   #leg-dep:not([hidden]){gap:2px 10px!important}
   #leg-st:not([hidden]),#leg-dep:not([hidden]){display:flex;flex-wrap:wrap;gap:2px 14px}
-  .brand{right:12px;max-width:none;padding:8px 10px}
-  .brand h1{font-size:16px}
-  .legend{top:auto;bottom:138px;left:12px;right:12px;min-width:0;display:flex;flex-wrap:wrap;gap:2px 16px;padding:8px 10px}
-  .legend label{padding:0}.legend .n{margin-left:2px}
-  .fuels{flex-wrap:nowrap;overflow-x:auto;max-width:none;right:12px;bottom:92px;padding:6px}
-  .chip{flex:none}
-  .go-down{left:12px;right:12px;padding:14px 16px;font-size:17px}
-  .leaflet-top.leaflet-left{bottom:auto;top:84px}
+  .xl{display:none} .xs{display:inline}
+  /* 1. bandeau défilant plus fin */
+  :root{--tk:28px}
+  .ticker{font-size:12px}
+  .ticker .live{font-size:10.5px;padding:0 8px;gap:5px}
+  .ticker .live i{width:6px;height:6px}
+  .tk-item{padding:0 14px;gap:5px}
+  .tk-item b[style]{font-size:12.5px!important}
+  /* 2. titre masqué (gardé pour Google), heure de mise à jour en petit */
+  .brand h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .brand{top:8px;left:8px;right:auto;max-width:calc(100% - 16px);padding:3px 4px 3px 9px;border-radius:999px}
+  .brand .sub{font-size:11px;gap:6px;flex-wrap:nowrap}
+  .brand .auto,.brand .lb{display:none}
+  .brand .btn{padding:1px 7px;font-size:12px}
+  .leaflet-top.leaflet-left{bottom:auto;top:40px}
+  /* 3. légende + carburants : petit bloc repliable en bas à droite */
+  .dock{display:flex;flex-direction:column;align-items:flex-end;gap:5px;position:absolute;z-index:500;right:8px;bottom:22px;width:min(196px,calc(100% - 16px))}
+  .dock-body{display:flex;flex-direction:column;gap:5px;width:100%}
+  .dock.closed .dock-body{display:none}
+  .dock .panel{position:static;margin:0}
+  .legend{min-width:0;padding:6px 8px;font-size:12px}
+  #leg-st:not([hidden]){display:flex;flex-direction:column;gap:1px}
+  .legend label{padding:1px 0;gap:6px}
+  .legend input{width:14px;height:14px;margin:0}
+  .legend .dot{width:9px;height:9px}
+  .dep-toggle{margin-top:4px;padding-top:5px!important;font-weight:600}
+  #leg-dep:not([hidden]){display:flex;flex-wrap:wrap;gap:1px 8px;margin-top:3px}
+  #leg-dep .leg-row{padding:0;gap:3px;font-size:11px}
+  #leg-dep .sq{width:10px;height:10px}
+  #leg-dep .ll,#leg-dep .n,#leg-dep .leg-note{display:none} #leg-dep .ls{display:inline}
+  .fuels{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:none;padding:4px;gap:4px;scrollbar-width:none}
+  .fuels::-webkit-scrollbar{display:none}
+  .chip{flex:none;font-size:11.5px;padding:2px 8px}
+  .dock-tg{display:inline-flex;align-items:center;gap:5px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow);padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer}
+  .dock-tg .tg-lbl{display:none}
+  .dock.closed .dock-tg .tg-lbl{display:inline}
+  .dock-tg .arr{font-size:11px;line-height:1}
+  .go-down{left:8px;right:auto;bottom:22px;padding:8px 14px;font-size:14px}
 }
 
 /* ---------- Détails / onglets ---------- */
@@ -251,16 +323,19 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     <h1>Carte des pénuries de carburant</h1>
     <div class="sub">
       <span id="updated">Chargement…</span>
-      <button class="btn" id="refresh" type="button">↻ Actualiser</button>
+      <button class="btn" id="refresh" type="button" aria-label="Actualiser">↻<span class="lb"> Actualiser</span></button>
+      <button class="btn" id="theme" type="button"></button>
     </div>
   </div>
+  <div class="dock" id="dock">
+  <div class="dock-body" id="dock-body">
   <div class="panel legend">
     <div id="leg-st">
-      <label><input type="checkbox" id="show-p" checked> <span class="dot p"></span> Rupture partielle <span class="n" id="l-p">–</span></label>
-      <label><input type="checkbox" id="show-t" checked> <span class="dot t"></span> Rupture totale <span class="n" id="l-t">–</span></label>
-      <label class="opt"><input type="checkbox" id="show-o"> <span class="dot o"></span> Stations approvisionnées <span class="n" id="l-o"></span></label>
+      <label><input type="checkbox" id="show-p" checked> <span class="dot p"></span> <span class="xl">Rupture partielle</span><span class="xs">Partielle</span> <span class="n" id="l-p">–</span></label>
+      <label><input type="checkbox" id="show-t" checked> <span class="dot t"></span> <span class="xl">Rupture totale</span><span class="xs">Totale</span> <span class="n" id="l-t">–</span></label>
+      <label class="opt"><input type="checkbox" id="show-o"> <span class="dot o"></span> <span class="xl">Stations approvisionnées</span><span class="xs">Approvisionnées</span> <span class="n" id="l-o"></span></label>
     </div>
-    <label class="dep-toggle"><input type="checkbox" id="show-dep" checked> Colorer les départements</label>
+    <label class="dep-toggle"><input type="checkbox" id="show-dep" checked> <span class="xl">Colorer les départements</span><span class="xs">Départements</span></label>
     <div class="leg-note" id="dep-missing" hidden>Contours introuvables : placez <b>departements.js</b> dans le même dossier que index.html.</div>
     <div id="leg-dep">
       <div class="leg-row"><span class="sq" style="background:var(--lv-b);border-color:var(--lv-b-edge)"></span> <span class="ll">50 % ou plus</span><span class="ls">≥ 50 %</span> <span class="n" id="d-4">–</span></div>
@@ -272,7 +347,10 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     </div>
   </div>
   <div class="panel fuels" id="fuels" aria-label="Filtrer par carburant"></div>
-  <button class="go-down" type="button" id="go-down">📊 Voir les statistiques ↓</button>
+  </div>
+  <button class="dock-tg" type="button" id="leg-toggle" aria-expanded="true" aria-controls="dock-body"><span class="tg-lbl">Légende</span> <span class="arr" aria-hidden="true">▾</span></button>
+  </div>
+  <button class="go-down" type="button" id="go-down">📊 <span class="xl">Voir les statistiques ↓</span><span class="xs">Statistiques ↓</span></button>
   <div class="overlay" id="overlay"><div><div class="spinner"></div>Chargement des ~10 000 stations…</div></div>
 </div>
 
@@ -503,11 +581,11 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   // Fond de carte Esri « Canvas » gris : sans clé d'API, fonctionne aussi en ouvrant le fichier en local
   // (les serveurs OpenStreetMap refusent les pages sans adresse web, d'où le message d'erreur sur la carte).
   const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/";
-  const tone = dark() ? "Dark" : "Light";
-  L.tileLayer(`${ESRI}World_${tone}_Gray_Base/MapServer/tile/{z}/{y}/{x}`, {
+  const tileUrl = part => `${ESRI}World_${dark() ? "Dark" : "Light"}_Gray_${part}/MapServer/tile/{z}/{y}/{x}`;
+  const baseTiles = L.tileLayer(tileUrl("Base"), {
     maxZoom:16, attribution:'Fond © Esri, HERE, Garmin, © contributeurs OpenStreetMap'
   }).addTo(map);
-  L.tileLayer(`${ESRI}World_${tone}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, {maxZoom:16, pane:"overlayPane"}).addTo(map);
+  const refTiles = L.tileLayer(tileUrl("Reference"), {maxZoom:16, pane:"overlayPane"}).addTo(map);
   const renderer = L.canvas({padding:.5});
   const layers = {o:L.layerGroup().addTo(map), p:L.layerGroup().addTo(map), t:L.layerGroup().addTo(map)};
 
@@ -1191,6 +1269,28 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     });
   }
   $("#go-down").addEventListener("click", () => $("#details").scrollIntoView({behavior:"smooth"}));
+  // Bouton mode clair / mode sombre (choix mémorisé dans le navigateur du visiteur)
+  function paintThemeBtn() {
+    const d = dark();
+    $("#theme").innerHTML = d ? `☀️<span class="lb"> Mode clair</span>` : `🌙<span class="lb"> Mode sombre</span>`;
+    $("#theme").setAttribute("aria-label", d ? "Passer en mode clair" : "Passer en mode sombre");
+  }
+  $("#theme").addEventListener("click", () => {
+    const next = dark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    baseTiles.setUrl(tileUrl("Base")); refTiles.setUrl(tileUrl("Reference"));
+    paintThemeBtn();
+    if (stations.length) redraw();       // recolore points, départements et graphiques
+  });
+  paintThemeBtn();
+
+  // Mobile : flèche pour replier / déplier la légende et les carburants
+  $("#leg-toggle").addEventListener("click", () => {
+    const closed = $("#dock").classList.toggle("closed");
+    $("#leg-toggle").setAttribute("aria-expanded", !closed);
+    $("#leg-toggle .arr").textContent = closed ? "▴" : "▾";
+  });
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     activeTab = t.id.replace("tab-", "");
     document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
@@ -1274,7 +1374,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       const cur = $("#f-region").value;
       $("#f-region").innerHTML = `<option value="">Toutes les régions</option>` +
         regs.map(r => `<option ${r === cur ? "selected" : ""}>${esc(r)}</option>`).join("");
-      $("#updated").textContent = `Mis à jour le ${fmtDate(new Date())} · auto toutes les ${REFRESH_MIN} min`;
+      $("#updated").innerHTML = `Mis à jour le ${fmtDate(new Date())}<span class="auto"> · auto toutes les ${REFRESH_MIN} min</span>`;
       redraw();
       ov.hidden = true;
     } catch (err) {
