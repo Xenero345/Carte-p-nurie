@@ -154,6 +154,7 @@ a{color:var(--accent)}
 .leaflet-control-attribution{font-size:10.5px;max-width:calc(100vw - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
 .pop-status{font-weight:700}
+.pop-name{font-weight:700;font-size:15px;margin-bottom:1px}
 .pop-status.p{color:var(--partial)} .pop-status.t{color:var(--total)}
 @media (max-width:640px){
   #leg-dep .leg-note{display:none}
@@ -196,11 +197,12 @@ a{color:var(--accent)}
   .fuels{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:none;padding:4px;gap:4px;scrollbar-width:none}
   .fuels::-webkit-scrollbar{display:none}
   .chip{flex:none;font-size:11.5px;padding:2px 8px}
-  .dock-tg{display:inline-flex;align-items:center;gap:5px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;box-shadow:var(--shadow);padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer}
-  .dock-tg .tg-lbl{display:none}
-  .dock.closed .dock-tg .tg-lbl{display:inline}
-  .dock-tg .arr{font-size:11px;line-height:1}
-  .go-down{left:8px;right:auto;bottom:22px;padding:8px 14px;font-size:14px}
+  /* bouton Légende : même format que le bouton Statistiques ; pleine largeur du bloc quand il sert à refermer */
+  .dock-tg{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.25);padding:0 16px;font-size:14px;font-weight:700;cursor:pointer}
+  .dock:not(.closed) .dock-tg{width:100%}
+  .dock.closed{width:auto}
+  .dock-tg .arr{font-size:12px;line-height:1}
+  .go-down{left:8px;right:auto;bottom:22px;height:40px;padding:0 16px;font-size:14px}
 }
 
 /* ---------- Détails / onglets ---------- */
@@ -264,12 +266,20 @@ tbody tr.sel{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .tab .s,#t-terr th .s{display:none}
 @media (max-width:860px){.tab .l{display:none} .tab .s{display:inline}}
 @media (max-width:600px){
-  .tab{padding:10px 9px}
+  /* onglets en bulles, tous sur une ligne */
+  .tabs{flex-wrap:nowrap;gap:4px;border-bottom:0;overflow-x:auto;scrollbar-width:none;padding:2px 0;margin-bottom:14px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:1 1 auto;padding:7px 4px;font-size:12.5px;border:1px solid var(--border);border-radius:999px;background:var(--surface);margin:0}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
   #t-terr th .l{display:none} #t-terr th .s{display:inline}
   #t-terr th,#t-terr td{padding:8px 6px;font-size:13.5px}
   #t-terr th:nth-child(2),#t-terr td:nth-child(2),#t-terr th:nth-child(7),#t-terr td:nth-child(7){display:none}
   #t-terr th{font-size:11px;letter-spacing:.02em}
   #t-terr td:first-child{white-space:normal;padding-left:10px}
+}
+@media (max-width:380px){
+  .tab{font-size:11.5px;padding:7px 3px}
+  .tabs{gap:3px}
 }
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
@@ -593,7 +603,8 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     const lbl = s.status === "t" ? "Rupture totale" : s.status === "p" ? "Rupture partielle" : "Approvisionnée";
     const miss = s.missing.map(k => FUEL_LABEL[k]).join(", ");
     const ok = s.dispo.map(k => FUEL_LABEL[k]).join(", ");
-    return `<div class="pop-status ${s.status}">${lbl}</div>
+    const nm = stationNames[String(s.id)];
+    return `${nm ? `<div class="pop-name">${esc(nm)}</div>` : ""}<div class="pop-status ${s.status}">${lbl}</div>
       <div>${esc(s.adr)}</div>
       ${miss ? `<div><b>Manque :</b> ${esc(miss)}</div>` : ""}
       ${ok ? `<div><b>Disponible :</b> ${esc(ok)}</div>` : ""}
@@ -1286,11 +1297,14 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   paintThemeBtn();
 
   // Mobile : flèche pour replier / déplier la légende et les carburants
-  $("#leg-toggle").addEventListener("click", () => {
-    const closed = $("#dock").classList.toggle("closed");
+  function setDock(closed) {
+    $("#dock").classList.toggle("closed", closed);
     $("#leg-toggle").setAttribute("aria-expanded", !closed);
+    $("#leg-toggle .tg-lbl").textContent = closed ? "Légende" : "Masquer";
     $("#leg-toggle .arr").textContent = closed ? "▴" : "▾";
-  });
+  }
+  $("#leg-toggle").addEventListener("click", () => setDock(!$("#dock").classList.contains("closed")));
+  setDock(matchMedia("(max-width:640px)").matches);   // sur téléphone, la légende est fermée à l'arrivée
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     activeTab = t.id.replace("tab-", "");
     document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
@@ -1340,6 +1354,10 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(drawActiveChart, 150); });
 
   // ---------- Chargement ----------
+  // Noms / enseignes des stations (enseignes.json, tiré d'OpenStreetMap par scripts/enseignes.py).
+  // Facultatif : sans ce fichier, les popups affichent simplement l'adresse comme avant.
+  let stationNames = {};
+  fetch("enseignes.json").then(r => r.ok ? r.json() : {}).then(j => { stationNames = (j && j.stations) || {}; }).catch(() => {});
   let releves3h = [];                       // [{ts, all, p, t, deps}]
   async function loadH3() {
     try {
