@@ -16,7 +16,7 @@ Lancé toutes les 3 heures :
 Usage : python scripts/snapshot.py [--file flux.json] [--out historique.json] [--out3h releves-3h.json]
 Aucune dépendance externe (bibliothèque standard uniquement).
 """
-import argparse, io, json, re, sys, unicodedata, urllib.request, zipfile
+import argparse, gzip, io, json, re, sys, unicodedata, urllib.request, zipfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -99,9 +99,13 @@ def classify(r, has_rupture_fields, now):
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "carte-penuries/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "carte-penuries/1.0", "Accept-Encoding": "gzip"})
     with urllib.request.urlopen(req, timeout=180) as r:
-        return json.load(r)
+        data = r.read()
+        # le serveur peut renvoyer du gzip même sans le demander (ou l'inverse) : on détecte la signature
+        if data[:2] == b"\x1f\x8b":
+            data = gzip.decompress(data)
+        return json.loads(data.decode("utf-8"))
 
 
 def build_day(rows, now):
