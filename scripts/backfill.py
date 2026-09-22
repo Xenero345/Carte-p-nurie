@@ -8,6 +8,8 @@ contenant, pour chaque station, tous les changements de prix et toutes les ruptu
 N derniers jours (à 9 h, heure de Paris) :
   - le nombre de stations en rupture partielle et totale (France + chaque département),
   - le prix moyen de chaque carburant,
+  - les « nouvelles ruptures » du jour (stations entrées en rupture / passées à sec, y compris
+    celles réapprovisionnées depuis),
 et l'ajoute à historique.json sans écraser les relevés quotidiens déjà présents.
 
 Usage :
@@ -23,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from snapshot import fuel_key, trim, PARIS, MAX_AGE_DAYS, PRICE_MAX_AGE_DAYS, KEEP_3H_DAYS  # mêmes règles que le site
+from snapshot import fuel_key, trim, station_event, PARIS, MAX_AGE_DAYS, PRICE_MAX_AGE_DAYS, KEEP_3H_DAYS  # mêmes règles que le site
 
 ARCHIVE = "https://donnees.roulez-eco.fr/opendata/annee/{year}"
 SOLD_LOOKBACK_DAYS = 60   # carburant "vendu" = prix mis à jour dans les 60 jours précédents
@@ -62,7 +64,7 @@ def open_source(path, year):
     return io.BytesIO(data)
 
 
-def process(src, instants, res):
+def process(src, instants, res, ev_days=(), ev=None):
     """Parcourt une archive station par station (mémoire constante) et cumule les résultats
     pour les instants de l'année couverte par ce fichier."""
     for _, el in ET.iterparse(src, events=("end",)):
@@ -86,6 +88,17 @@ def process(src, instants, res):
         el.clear()
         if not prix and not rup:
             continue
+        temps = [(k, deb, fin) for k, deb, fin, definitive in rup if not definitive]
+        for key, d0, d1 in ev_days:                    # nouvelles ruptures déclarées ce jour-là
+            if not any(d0 <= deb < d1 for _, deb, _ in temps):
+                continue
+            lo = d0 - timedelta(days=SOLD_LOOKBACK_DAYS)
+            sold = {k for k, v in prix.items() if any(lo <= d < d1 for d, _ in v)}
+            e = station_event(sold, temps, d0, d1)
+            if e:
+                x = ev.setdefault(key, {"p": 0, "t": 0, "deps": {}, "source": "archive"})
+                x[e] += 1
+                dd = x["deps"].setdefault(dep, [0, 0]); dd[0 if e == "p" else 1] += 1
         first_year = min((d.year for v in prix.values() for d, _ in v), default=None)
         for k in prix:
             prix[k].sort()
@@ -134,12 +147,15 @@ def main():
     h3 = [midnight - timedelta(days=1) - timedelta(hours=3 * k) for k in range((KEEP_3H_DAYS - 2) * 8, -1, -1)]
     instants = daily + h3
     res = [{"all": 0, "p": 0, "t": 0, "deps": {}, "_px": {}} for _ in instants]
+    ev_days = [(D.strftime("%Y-%m-%d"), D.replace(hour=0), D.replace(hour=0) + timedelta(days=1)) for D in daily]
+    ev = {}
     if a.file:
         for f in a.file:
-            process(open_source(f, None), list(enumerate(instants)), res)
+            process(open_source(f, None), list(enumerate(instants)), res, ev_days, ev)
     else:
         for y in sorted({d.year for d in instants}):
-            process(open_source(None, y), [(i, D) for i, D in enumerate(instants) if D.year == y], res)
+            process(open_source(None, y), [(i, D) for i, D in enumerate(instants) if D.year == y], res,
+                    [e for e in ev_days if e[1].year == y], ev)
     for r in res:
         r["prix"] = {k: round(v[0] / v[1], 4) for k, v in r.pop("_px").items() if v[1] >= 20}
 
@@ -147,6 +163,8 @@ def main():
     instants = daily
     p3 = Path(a.out3h)
     d3 = json.loads(p3.read_text(encoding="utf-8")) if p3.exists() else {"points": []}
+    if a.overwrite:                      # on remplace les points reconstitués, pas les relevés réels
+        d3["points"] = [x for x in d3.get("points", []) if x.get("source") != "archive"]
     have = {x["ts"][:13] for x in d3.get("points", [])}
     n3 = 0
     for D, v in zip(h3, res_h3):
@@ -165,10 +183,15 @@ def main():
         date = D.strftime("%Y-%m-%d")
         if v["all"] < 1000:
             print(f"{date} ignoré ({v['all']} stations seulement)", file=sys.stderr); continue
+        new = ev.get(date, {"p": 0, "t": 0, "deps": {}, "source": "archive"})
         if date in existing and not a.overwrite:
             existing[date].setdefault("prix", v["prix"])   # complète au moins les prix
+            if existing[date].get("new", {}).get("source") != "jour":
+                existing[date]["new"] = new
             continue
-        existing[date] = {"date": date, "time": "09:00", "source": "archive", **v}
+        old_new = existing.get(date, {}).get("new")
+        existing[date] = {"date": date, "time": "09:00", "source": "archive", **v,
+                          "new": old_new if old_new and old_new.get("source") == "jour" else new}
         added += 1
     days = trim(sorted(existing.values(), key=lambda d: d["date"]))
     hist = {"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "days": days[-400:]}
