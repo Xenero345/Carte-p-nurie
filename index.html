@@ -255,6 +255,12 @@ a{color:var(--accent)}
 .dep-hero .dh-in b{color:var(--text)}
 .dep-hero .dh-links{margin-top:6px;font-size:13.5px}
 .dep-hero .dh-links a{margin-right:10px}
+/* ---------- FAQ des pages /departement/… ---------- */
+.faq{margin-top:30px}
+.faq h2{font-size:17px;margin:0 0 10px}
+.faq details{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.faq summary{cursor:pointer;font-weight:600;font-size:14.5px}
+.faq p{margin:8px 0 2px;color:var(--muted);font-size:14px;line-height:1.55}
 
 /* ---------- Détails / onglets ---------- */
 .wrap{max-width:1200px;margin:0 auto;padding:0 16px}
@@ -385,6 +391,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     <div class="sub">
       <span id="updated">Chargement…</span>
       <button class="btn" id="refresh" type="button" aria-label="Actualiser">↻<span class="lb"> Actualiser</span></button>
+      <button class="btn" id="share" type="button" aria-label="Partager cette page">🔗<span class="lb"> Partager</span></button>
       <button class="btn" id="theme" type="button"></button>
     </div>
   </div>
@@ -544,6 +551,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   </section>
 
   <footer>
+    <p><a href="/departement/">Voir le détail par département →</a></p>
     Données : flux instantané « Prix des carburants en France » publié sous Licence Ouverte par le ministère de l'Économie (<a href="https://www.prix-carburants.gouv.fr/" target="_blank" rel="noopener">prix-carburants.gouv.fr</a>), actualisé toutes les 10 minutes à partir des déclarations des stations. Partielle : au moins un carburant manque. Totale : plus aucun des carburants vendus par la station n'est disponible. Les ruptures déclarées depuis plus de <span id="maxage"></span> jours sans mise à jour sont écartées (déclarations jamais clôturées). Fond de carte © Esri, © contributeurs OpenStreetMap. Contours des départements : IGN / INSEE via france-geojson (Licence Ouverte).
   </footer>
 </main>
@@ -1478,9 +1486,16 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   });
 
   // ---------- Périmètre ----------
+  // Même règle de « slug » que scripts/pages.py, pour retomber sur la bonne URL /departement/<slug>/.
+  function slugDep(nom) {
+    return nom.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
+  }
   function drawScope() {
+    const lienDep = (!window.SCOPE_DEP && scope && scope.type === "dep")
+      ? ` · <a href="/departement/${slugDep(scope.key.replace(/\s*\(\d[\dAB]?\)\s*$/, ""))}/">Page dédiée à ce département ↗</a>` : "";
     $("#scope").innerHTML = `Périmètre : <b>${esc(scopeName())}</b>` +
       (fuelFilter !== "all" ? ` · carburant : <b>${FUEL_LABEL[fuelFilter]}</b>` : "") +
+      lienDep +
       (scope ? ` <button class="x" type="button" id="scope-x">✕ Revenir à la France entière</button>` : "");
     const x = $("#scope-x");
     if (x) x.addEventListener("click", () => { scope = null; map.setView([46.6, 2.4], innerWidth < 640 ? 5 : 6); redrawDetails(); });
@@ -1570,6 +1585,15 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   });
   $("#st-more button").addEventListener("click", () => { stLimit += 200; drawStations(); });
   $("#refresh").addEventListener("click", () => load());
+  $("#share").addEventListener("click", async () => {
+    const btn = $("#share"), url = location.href, title = document.title;
+    if (navigator.share) { try { await navigator.share({title, url}); } catch {} return; }
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.innerHTML = `✓<span class="lb"> Lien copié</span>`;
+      setTimeout(() => { btn.innerHTML = `🔗<span class="lb"> Partager</span>`; }, 2000);
+    } catch { prompt("Copier ce lien :", url); }
+  });
   let rsz;
   addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(drawActiveChart, 150); });
 
