@@ -9,7 +9,7 @@ et écrit actu.json :
 Usage : python scripts/actu.py [--out actu.json] [--max 6]
 Aucune dépendance externe (bibliothèque standard uniquement).
 """
-import argparse, datetime, json, re, sys, urllib.parse, urllib.request
+import argparse, datetime, json, re, sys, unicodedata, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -23,6 +23,23 @@ def telecharger():
     req = urllib.request.Request(url, headers={"User-Agent": "carte-penuries/1.0"})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
+
+
+# Articles écartés : guides « où trouver de l'essence » et articles qui présentent d'autres cartes / applis
+# (ils renverraient nos visiteurs vers la concurrence).
+EXCLUS = re.compile(
+    r"\b(ou|comment) (trouver|faire le plein)|trouver (de l'?|du |des )?(essence|carburant|gazole|station)"
+    r"|\bcartes?\b|\bapplis?\b|\bapplications?\b|\bsites? (pour|qui)|quelles stations|liste des stations"
+    r"|stations? (encore )?(approvisionnee|ouverte|qui ont)|en temps reel",
+    re.I)
+
+
+def sans_accents(s):
+    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode()
+
+
+def exclu(titre):
+    return bool(EXCLUS.search(sans_accents(titre).replace("’", "'")))
 
 
 def nettoyer_titre(titre, source):
@@ -60,7 +77,11 @@ def main():
                 pass
         if not titre or not lien:
             continue
-        articles.append({"title": nettoyer_titre(titre, source), "link": lien, "source": source, "date": date})
+        titre = nettoyer_titre(titre, source)
+        if exclu(titre):
+            print(f"  écarté : {titre}", file=sys.stderr)
+            continue
+        articles.append({"title": titre, "link": lien, "source": source, "date": date})
         if len(articles) >= a.max:
             break
 
