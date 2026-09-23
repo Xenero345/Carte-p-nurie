@@ -63,8 +63,9 @@ def fuel_set(v):
 def parse_date(v):
     if not v: return None
     try:
+        # Le flux officiel donne l'heure de Paris mais l'étiquette « +00:00 » : on garde l'heure telle quelle.
         d = datetime.fromisoformat(str(v).replace("Z", "+00:00"))
-        return d if d.tzinfo else d.replace(tzinfo=PARIS)
+        return d.replace(tzinfo=PARIS)
     except ValueError:
         return None
 
