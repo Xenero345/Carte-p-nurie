@@ -22,7 +22,7 @@ jobs:
   pages:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,6 +32,12 @@ jobs:
           python-version: "3.12"
       - name: Générer les pages département
         run: python scripts/pages.py
+      - name: Installer Playwright (images de partage)
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+      - name: Générer les images de partage par département
+        run: python scripts/og_departements.py
       - name: Enregistrer
         run: |
           git config user.name "pages-bot"
