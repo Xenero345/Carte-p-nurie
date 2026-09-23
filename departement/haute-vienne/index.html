@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pénurie d'essence en Haute-Vienne (87) : carte des stations en temps réel</title>
+<meta name="description" content="4,8 % des stations-service de Haute-Vienne sont en rupture partielle ou totale de carburant. Carte interactive en temps réel, données officielles du ministère de l'Économie.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://carte-penurie-essence.fr/departement/haute-vienne/">
+<link rel="icon" href="https://carte-penurie-essence.fr/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="https://carte-penurie-essence.fr/apple-touch-icon.png">
+<meta name="theme-color" content="#0f1115">
+
+<!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://carte-penurie-essence.fr/departement/haute-vienne/">
+<meta property="og:title" content="Pénurie d'essence en Haute-Vienne (87) : carte des stations en temps réel">
+<meta property="og:description" content="4,8 % des stations-service de Haute-Vienne sont en rupture partielle ou totale de carburant. Carte interactive en temps réel, données officielles du ministère de l'Économie.">
+<meta property="og:image" content="https://carte-penurie-essence.fr/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Carte de France des stations-service en rupture de carburant">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Carte pénurie essence">
+
+<!-- Twitter / X Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pénurie d'essence en Haute-Vienne (87) : carte des stations en temps réel">
+<meta name="twitter:description" content="4,8 % des stations-service de Haute-Vienne sont en rupture partielle ou totale de carburant. Carte interactive en temps réel, données officielles du ministère de l'Économie.">
+<meta name="twitter:image" content="https://carte-penurie-essence.fr/preview.png">
+
+<!-- Données structurées (Google) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Pénurie d'essence en Haute-Vienne",
+  "description": "4,8 % des stations-service de Haute-Vienne sont en rupture partielle ou totale de carburant. Carte interactive en temps réel, données officielles du ministère de l'Économie.",
+  "url": "https://carte-penurie-essence.fr/departement/haute-vienne/",
+  "image": "https://carte-penurie-essence.fr/preview.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Tous (navigateur web)",
+  "inLanguage": "fr",
+  "isAccessibleForFree": true,
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}
+}
+</script>
+
+<script>
+  // Thème choisi par le visiteur (bouton ☀️ / 🌙), appliqué avant l'affichage pour éviter un flash
+  try { var t = localStorage.getItem("theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  // Contours des départements : fichier local, sinon copie publique du dépôt GitHub (utile si index.html est ouvert seul)
+  function chargerDepartementsSecours() {
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/gh/Xenero345/Carte-p-nurie@main/departements.js";
+    s.onload = function () { window.dispatchEvent(new Event("departements-charges")); };
+    document.head.appendChild(s);
+  }
+</script>
+<script src="/departements.js" onerror="chargerDepartementsSecours()"></script>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --text:#16181d; --muted:#5d6470;
+  --border:#e1e4ea; --accent:#1f6feb; --on-accent:#fff;
+  --partial:#f08c00; --total:#e03131; --ok:#2f9e44; --ok-soft:#b8c0cc; --up:#e03131; --down:#2f9e44;
+  --ticker-bg:#16181d; --ticker-text:#f1f3f5; --ticker-muted:#a5adba;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.08);
+  --tk:38px;
+  --dep-low:#cfd6df; --dep-edge:#8f99a8; --lv-y:#f2c200; --lv-o:#f76707; --lv-r:#e03131; --lv-b:#1a1a1a; --lv-b-edge:#1a1a1a;
+  --f-gazole:#2a78d6; --f-e10:#eb6834; --f-sp98:#1baf7a; --f-sp95:#eda100; --f-e85:#e87ba4; --f-gplc:#008300;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --surface:#171a21; --surface-2:#1e222b; --text:#e8eaef; --muted:#9aa2b1;
+    --border:#2a2f3a; --accent:#58a6ff; --on-accent:#0b0d11; --dep-low:#3a414e; --dep-edge:#6b7486; --lv-y:#e5b800; --lv-o:#ff7a1a; --lv-r:#ff5c5c; --lv-b:#000000; --lv-b-edge:#8a93a3;
+    --partial:#ffa94d; --total:#ff6b6b; --ok:#51cf66; --ok-soft:#4a5160; --up:#ff6b6b; --down:#51cf66;
+    --ticker-bg:#07080b; --ticker-text:#e8eaef; --ticker-muted:#8b93a3;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.4);
+    --f-gazole:#3987e5; --f-e10:#d95926; --f-sp98:#199e70; --f-sp95:#c98500; --f-e85:#d55181; --f-gplc:#2f9e44;
+  }
+}
+:root[data-theme="dark"]{
+--f-gazole:#3987e5; --f-e10:#d95926; --f-sp98:#199e70; --f-sp95:#c98500; --f-e85:#d55181; --f-gplc:#2f9e44;
+  --bg:#0f1115; --surface:#171a21; --surface-2:#1e222b; --text:#e8eaef; --muted:#9aa2b1;
+  --border:#2a2f3a; --accent:#58a6ff; --on-accent:#0b0d11; --dep-low:#3a414e; --dep-edge:#6b7486; --lv-y:#e5b800; --lv-o:#ff7a1a; --lv-r:#ff5c5c; --lv-b:#000000; --lv-b-edge:#8a93a3;
+  --partial:#ffa94d; --total:#ff6b6b; --ok:#51cf66; --ok-soft:#4a5160; --up:#ff6b6b; --down:#51cf66;
+  --ticker-bg:#07080b; --ticker-text:#e8eaef; --ticker-muted:#8b93a3;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+a{color:var(--accent)}
+.btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;flex:none}
+.dot.p{background:var(--partial)} .dot.t{background:var(--total)} .dot.o{background:var(--ok)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.sw.p{background:var(--partial)} .sw.t{background:var(--total)}
+.up{color:var(--up)} .down{color:var(--down)}
+
+/* ---------- Bandeau défilant ---------- */
+.ticker{position:sticky;top:0;z-index:1100;height:var(--tk);background:var(--ticker-bg);color:var(--ticker-text);overflow:hidden;display:flex;align-items:center;font-size:14px}
+.ticker .live{flex:none;display:flex;align-items:center;gap:6px;padding:0 12px;height:100%;background:var(--total);color:#fff;font-weight:700;font-size:12.5px;letter-spacing:.06em;z-index:1}
+.ticker .live i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.tk-view{flex:1;overflow:hidden;height:100%;display:flex;align-items:center;mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
+.tk-track{display:flex;white-space:nowrap;width:max-content;animation:scroll var(--dur,60s) linear infinite}
+.ticker:hover .tk-track{animation-play-state:paused}
+.tk-group{display:flex;flex:none}
+.tk-item{padding:0 22px;display:inline-flex;align-items:center;gap:7px;border-right:1px solid rgba(255,255,255,.14)}
+.tk-item .k{color:var(--ticker-muted)}
+.tk-item b{font-variant-numeric:tabular-nums}
+.tk-item .up{color:#ff8787} .tk-item .down{color:#69db7c}
+@keyframes scroll{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.tk-track{animation:none}.tk-view{overflow-x:auto}}
+
+/* ---------- Carte plein écran ---------- */
+.hero{position:relative;height:calc(100svh - var(--tk));min-height:420px}
+#map{position:absolute;inset:0;background:var(--surface-2)}
+.leaflet-top.leaflet-left{top:118px;bottom:auto}
+.panel{position:absolute;z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;font-size:13.5px}
+.brand{top:12px;left:12px;max-width:min(420px,calc(100% - 24px))}
+.brand h1{font-size:16px;margin:0 0 2px;letter-spacing:-.01em;line-height:1.25}
+/* Libellés longs / courts, bloc légende repliable (replier = mobile uniquement) */
+.xs{display:none}
+.dock,.dock-body{display:contents}
+.dock-tg{display:none}
+.brand .sub{color:var(--muted);font-size:12.5px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.brand .btn{padding:2px 8px;font-size:12.5px}
+.legend{top:12px;right:12px;min-width:230px}
+.legend label{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer}
+.dep-toggle{border-top:1px solid var(--border);margin-top:6px;padding-top:7px!important;font-weight:600}
+#leg-dep .leg-row{padding:1px 0 1px 24px;font-size:12.5px}
+#leg-dep .sq{width:12px;height:12px}
+#leg-dep .ls{display:none}
+.leg-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+.leg-row .n{margin-left:auto}
+.leg-note{color:var(--muted);font-size:12px;margin-top:4px}
+.sq{width:14px;height:14px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.15)}
+.dep-tip{font-size:13px;line-height:1.4}
+.sq.lv{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+.dep-tip b.big{font-size:15px}
+.legend .n{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+.legend .opt .n{font-weight:400;color:var(--muted)}
+.fuels{left:12px;bottom:30px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 310px)}
+.chip{border:1px solid var(--border);background:var(--surface-2);border-radius:999px;padding:3px 10px;cursor:pointer;font-size:13px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.go-down{position:absolute;z-index:500;right:12px;bottom:30px;background:var(--accent);color:var(--on-accent);border:0;border-radius:999px;padding:13px 26px;font-size:17px;font-weight:700;letter-spacing:.01em;box-shadow:0 4px 18px rgba(0,0,0,.25);cursor:pointer;transition:transform .15s}
+.go-down:hover{transform:translateY(-2px)}
+.overlay{position:absolute;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 70%,transparent);text-align:center;padding:16px}
+.overlay[hidden]{display:none}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.leaflet-popup-content{font-size:13.5px;line-height:1.4}
+.leaflet-control-attribution{font-size:10.5px;max-width:calc(100vw - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface);color:var(--text)}
+.pop-status{font-weight:700}
+.pop-name{font-weight:700;font-size:15px;margin-bottom:1px}
+.pop-status.p{color:var(--partial)} .pop-status.t{color:var(--total)}
+@media (max-width:640px){
+  #leg-dep .leg-note{display:none}
+  .dep-toggle{flex-basis:100%;margin-top:2px;padding-top:4px!important}
+  #leg-dep .leg-row{padding:0;gap:4px}
+  #leg-dep .ll{display:none} #leg-dep .ls{display:inline}
+  #leg-dep .n{display:none}
+  #leg-dep:not([hidden]){gap:2px 10px!important}
+  #leg-st:not([hidden]),#leg-dep:not([hidden]){display:flex;flex-wrap:wrap;gap:2px 14px}
+  .xl{display:none} .xs{display:inline}
+  /* 1. bandeau défilant plus fin */
+  :root{--tk:28px}
+  .ticker{font-size:12px}
+  .ticker .live{font-size:10.5px;padding:0 8px;gap:5px}
+  .ticker .live i{width:6px;height:6px}
+  .tk-item{padding:0 14px;gap:5px}
+  .tk-item b[style]{font-size:12.5px!important}
+  /* 2. titre masqué (gardé pour Google), heure de mise à jour en petit */
+  .brand h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .brand{top:8px;left:8px;right:auto;max-width:calc(100% - 16px);padding:3px 4px 3px 9px;border-radius:999px}
+  .brand .sub{font-size:11px;gap:6px;flex-wrap:nowrap}
+  .brand .auto,.brand .lb{display:none}
+  .brand .btn{padding:1px 7px;font-size:12px}
+  .leaflet-top.leaflet-left{bottom:auto;top:40px}
+  /* 3. légende + carburants : petit bloc repliable en bas à droite */
+  .dock{display:flex;flex-direction:column;align-items:flex-end;gap:5px;position:absolute;z-index:500;right:8px;bottom:22px;width:min(196px,calc(100% - 16px))}
+  .dock-body{display:flex;flex-direction:column;gap:5px;width:100%}
+  .dock.closed .dock-body{display:none}
+  .dock .panel{position:static;margin:0}
+  .legend{min-width:0;padding:6px 8px;font-size:12px}
+  #leg-st:not([hidden]){display:flex;flex-direction:column;gap:1px}
+  .legend label{padding:1px 0;gap:6px}
+  .legend input{width:14px;height:14px;margin:0}
+  .legend .dot{width:9px;height:9px}
+  .dep-toggle{margin-top:4px;padding-top:5px!important;font-weight:600}
+  #leg-dep:not([hidden]){display:flex;flex-wrap:wrap;gap:1px 8px;margin-top:3px}
+  #leg-dep .leg-row{padding:0;gap:3px;font-size:11px}
+  #leg-dep .sq{width:10px;height:10px}
+  #leg-dep .ll,#leg-dep .n,#leg-dep .leg-note{display:none} #leg-dep .ls{display:inline}
+  .fuels{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:none;padding:4px;gap:4px;scrollbar-width:none}
+  .fuels::-webkit-scrollbar{display:none}
+  .chip{flex:none;font-size:11.5px;padding:2px 8px}
+  /* bouton Légende : même format que le bouton Statistiques ; pleine largeur du bloc quand il sert à refermer */
+  .dock-tg{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:999px;box-shadow:0 4px 18px rgba(0,0,0,.25);padding:0 16px;font-size:14px;font-weight:700;cursor:pointer}
+  .dock:not(.closed) .dock-tg{width:100%}
+  .dock.closed{width:auto}
+  .dock-tg .arr{font-size:12px;line-height:1}
+  .go-down{left:8px;right:auto;bottom:22px;height:40px;padding:0 16px;font-size:14px}
+}
+
+/* ---------- Bandeau d'état ---------- */
+.status-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;color:#fff;background:var(--sb-c,var(--ok))}
+.status-banner .sb-dot{width:9px;height:9px;border-radius:50%;background:#fff;flex:none;opacity:.9}
+.status-banner .sb-text{display:flex;flex-wrap:wrap;column-gap:8px;row-gap:0;align-items:baseline;max-width:1200px}
+.status-banner .sb-trend{opacity:.85;font-size:13px}
+.status-banner .up,.status-banner .down{color:#fff;font-weight:700}
+@media (max-width:640px){.status-banner{padding:8px 12px;font-size:13px}.status-banner .sb-trend{font-size:12px}}
+
+/* ---------- Actu & réseaux sociaux ---------- */
+.actu{margin-top:30px}
+.une{display:flex;align-items:stretch;margin-bottom:14px;border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;border:2px solid var(--total);background:var(--surface)}
+.une[hidden]{display:none}
+.une-tag{flex:none;display:flex;align-items:center;padding:0 14px;background:var(--total);color:#fff;font-weight:800;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
+.une-body{padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.une-title{font-weight:700;font-size:16px}
+.une-meta{color:var(--muted);font-size:12.5px}
+.une:hover .une-title{text-decoration:underline}
+@media (max-width:640px){.une{flex-direction:column}.une-tag{padding:5px 12px}.une-title{font-size:15px}}
+/* Analyse de la situation */
+.analyse{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;font-size:14px}
+.analyse .an-in{max-width:1200px;margin:0 auto;display:flex;gap:8px;align-items:baseline}
+.analyse .an-lbl{flex:none;font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.analyse[hidden]{display:none}
+@media (max-width:640px){.analyse{padding:8px 12px;font-size:13px}.analyse .an-in{flex-direction:column;gap:2px}}
+.actu-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+@media (max-width:760px){.actu-grid{grid-template-columns:1fr}}
+.actu-list{display:flex;flex-direction:column;gap:0}
+.actu-item{display:block;padding:12px 14px;border-bottom:1px solid var(--border);text-decoration:none;color:inherit}
+.actu-item:last-child{border-bottom:0}
+.actu-item:hover{background:var(--surface-2)}
+.actu-item .a-title{display:block;font-weight:600;font-size:14.5px;margin-bottom:3px}
+.actu-item .a-meta{color:var(--muted);font-size:12.5px}
+.actu-empty{padding:16px;color:var(--muted);font-size:14px}
+.tweets{display:flex;flex-direction:column;gap:12px}
+.tweets .tw-empty{color:var(--muted);font-size:13.5px;padding:2px}
+
+/* ---------- Bloc de texte des pages /departement/… ---------- */
+.dep-hero{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px}
+.dep-hero .dh-in{max-width:1200px;margin:0 auto;font-size:14.5px;color:var(--muted);line-height:1.5}
+.dep-hero .dh-in b{color:var(--text)}
+.dep-hero .dh-links{margin-top:6px;font-size:13.5px}
+.dep-hero .dh-links a{margin-right:10px}
+
+/* ---------- Détails / onglets ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+main{padding:22px 0 10px}
+.scope{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;font-size:14px;color:var(--muted)}
+.scope b{color:var(--text)}
+.scope .x{border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:1px 9px;cursor:pointer;font-size:13px}
+.tabs{display:flex;flex-wrap:wrap;gap:0 4px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{border:0;background:none;padding:10px 14px;cursor:pointer;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.tabpanel[hidden]{display:none}
+h2{font-size:18px;margin:0 0 10px}
+h3{font-size:16px;margin:22px 0 10px}
+.hint{color:var(--muted);font-size:13px;margin:8px 2px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.controls input,.controls select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:0}
+.controls input{flex:1 1 220px}
+.controls select{flex:1 1 280px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.tscroll{overflow-x:auto;max-height:560px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--surface-2);cursor:pointer;user-select:none;position:sticky;top:0;z-index:1}
+th.num,td.num{text-align:right}
+th[aria-sort="ascending"]::after{content:" ▲"} th[aria-sort="descending"]::after{content:" ▼"}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.sel{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.bar{display:flex;gap:2px;height:8px;width:120px;border-radius:4px;overflow:hidden;background:var(--surface-2);margin-left:auto}
+.bar i{display:block;height:100%}
+.bar .p{background:var(--partial)} .bar .t{background:var(--total)}
+.pct{font-weight:600}
+.stations td{white-space:normal}
+.tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12.5px;font-weight:600;color:#fff}
+.tag.p{background:#c96f00} .tag.t{background:#c92a2a}
+.fuel-miss{display:inline-block;border:1px solid var(--border);border-radius:5px;padding:0 6px;margin:1px 3px 1px 0;font-size:12.5px}
+.more{padding:10px 12px;text-align:center}
+@media (max-width:600px){
+  .stations thead{display:none}
+  .stations tr{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .stations td{border:0;padding:0}
+  .stations td:nth-child(2){grid-column:2/4}
+  .stations td:nth-child(3){display:none}
+  .stations td:nth-child(4){grid-column:1/3}
+  .stations td:nth-child(5){color:var(--muted);font-size:12.5px;text-align:right}
+}
+
+/* Graphiques */
+.chart-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px;margin-bottom:10px}
+.chart-head h2{margin:0}
+.chart-legend{display:flex;gap:14px;font-size:13px;color:var(--muted)}
+.chart-card{position:relative;padding:14px 14px 6px}
+.chart-sum{font-size:14px;color:var(--muted);margin-bottom:6px}
+.chart-sum b{color:var(--text)}
+.chart-sum .up{color:var(--up)} .chart-sum .down{color:var(--down)}
+#details{scroll-margin-top:var(--tk)}
+.tab .s,#t-terr th .s{display:none}
+@media (max-width:860px){.tab .l{display:none} .tab .s{display:inline}}
+@media (max-width:600px){
+  /* onglets en bulles, tous sur une ligne */
+  .tabs{flex-wrap:nowrap;gap:4px;border-bottom:0;overflow-x:auto;scrollbar-width:none;padding:2px 0;margin-bottom:14px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:1 1 auto;padding:7px 4px;font-size:12.5px;border:1px solid var(--border);border-radius:999px;background:var(--surface);margin:0}
+  .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+  #t-terr th .l{display:none} #t-terr th .s{display:inline}
+  #t-terr th,#t-terr td{padding:8px 6px;font-size:13.5px}
+  #t-terr th:nth-child(2),#t-terr td:nth-child(2),#t-terr th:nth-child(7),#t-terr td:nth-child(7){display:none}
+  #t-terr th{font-size:11px;letter-spacing:.02em}
+  #t-terr td:first-child{white-space:normal;padding-left:10px}
+}
+@media (max-width:380px){
+  .tab{font-size:11.5px;padding:7px 3px}
+  .tabs{gap:3px}
+}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.stat .l{color:var(--muted);font-size:12.5px}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .d{font-size:12.5px;color:var(--muted)}
+@media (max-width:720px){.stats{grid-template-columns:repeat(2,1fr)}}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .grid{stroke:var(--border);stroke-width:1}
+.chart .axis{fill:var(--muted);font-size:12px}
+.chart .val{fill:var(--text);font-size:11.5px;font-variant-numeric:tabular-nums}
+.chart .bp{fill:var(--partial)} .chart .bt{fill:var(--total)}
+.chart .lp{stroke:var(--partial)} .chart .lt{stroke:var(--total)}
+.chart .line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .hit{fill:transparent}
+.chart .hit:hover{fill:color-mix(in srgb,var(--text) 5%,transparent)}
+.chart .xh{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.chart .mk{stroke:var(--surface);stroke-width:2}
+.chart .lbl{font-size:12px;font-weight:600}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:8px;padding:7px 10px;font-size:13px;white-space:nowrap;z-index:5}
+.tip .r{display:flex;align-items:center;gap:6px}
+.tip .r b{margin-left:auto;padding-left:12px;font-variant-numeric:tabular-nums}
+/* Prix moyen */
+.price-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+@media (max-width:720px){.price-tiles{grid-template-columns:repeat(2,1fr)}}
+.ptile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.ptile .l{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+.ptile .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.ptile .v small{font-size:13px;font-weight:500;color:var(--muted)}
+.ptile .d{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px}
+.fsw{display:inline-block;width:12px;height:3px;border-radius:2px;flex:none}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:3px 10px;cursor:pointer;font-size:13px;color:var(--muted)}
+.pchip[aria-pressed="true"]{color:var(--text);border-color:var(--text)}
+.pchip[aria-pressed="false"] .fsw{opacity:.3}
+.chart .pl{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px solid var(--border);margin-top:30px}
+</style>
+</head>
+<body>
+<script>window.SCOPE_DEP="87";</script>
+
+<div class="ticker" aria-label="Chiffres clés">
+  <div class="live"><i></i>EN DIRECT</div>
+  <div class="tk-view"><div class="tk-track" id="tk-track"><div class="tk-group"><span class="tk-item"><span class="k">Chargement des données officielles…</span></span></div></div></div>
+</div>
+
+<div class="hero">
+  <div id="map" role="region" aria-label="Carte des stations en rupture"></div>
+  <div class="panel brand">
+    <h1>Pénurie d'essence en Haute-Vienne (87)</h1>
+    <div class="sub">
+      <span id="updated">Chargement…</span>
+      <button class="btn" id="refresh" type="button" aria-label="Actualiser">↻<span class="lb"> Actualiser</span></button>
+      <button class="btn" id="theme" type="button"></button>
+    </div>
+  </div>
+  <div class="dock" id="dock">
+  <div class="dock-body" id="dock-body">
+  <div class="panel legend">
+    <div id="leg-st">
+      <label><input type="checkbox" id="show-p" checked> <span class="dot p"></span> <span class="xl">Rupture partielle</span><span class="xs">Partielle</span> <span class="n" id="l-p">–</span></label>
+      <label><input type="checkbox" id="show-t" checked> <span class="dot t"></span> <span class="xl">Rupture totale</span><span class="xs">Totale</span> <span class="n" id="l-t">–</span></label>
+      <label class="opt"><input type="checkbox" id="show-o"> <span class="dot o"></span> <span class="xl">Stations approvisionnées</span><span class="xs">Approvisionnées</span> <span class="n" id="l-o"></span></label>
+    </div>
+    <label class="dep-toggle"><input type="checkbox" id="show-dep" checked> <span class="xl">Colorer les départements</span><span class="xs">Départements</span></label>
+    <div class="leg-note" id="dep-missing" hidden>Contours introuvables : placez <b>departements.js</b> dans le même dossier que index.html.</div>
+    <div id="leg-dep">
+      <div class="leg-row"><span class="sq" style="background:var(--lv-b);border-color:var(--lv-b-edge)"></span> <span class="ll">50 % ou plus</span><span class="ls">≥ 50 %</span> <span class="n" id="d-4">–</span></div>
+      <div class="leg-row"><span class="sq" style="background:var(--lv-r)"></span> <span class="ll">De 33 à 50 %</span><span class="ls">33-50</span> <span class="n" id="d-3">–</span></div>
+      <div class="leg-row"><span class="sq" style="background:var(--lv-o)"></span> <span class="ll">De 25 à 33 %</span><span class="ls">25-33</span> <span class="n" id="d-2">–</span></div>
+      <div class="leg-row"><span class="sq" style="background:var(--lv-y)"></span> <span class="ll">De 20 à 25 %</span><span class="ls">20-25</span> <span class="n" id="d-1">–</span></div>
+      <div class="leg-row"><span class="sq" style="background:var(--dep-low)"></span> <span class="ll">Moins de 20 %</span><span class="ls">< 20</span> <span class="n" id="d-0">–</span></div>
+      <div class="leg-note">% de stations en rupture partielle ou totale</div>
+    </div>
+  </div>
+  <div class="panel fuels" id="fuels" aria-label="Filtrer par carburant"></div>
+  </div>
+  <button class="dock-tg" type="button" id="leg-toggle" aria-expanded="true" aria-controls="dock-body"><span class="tg-lbl">Légende</span> <span class="arr" aria-hidden="true">▾</span></button>
+  </div>
+  <button class="go-down" type="button" id="go-down">📊 <span class="xl">Voir les statistiques ↓</span><span class="xs">Statistiques ↓</span></button>
+  <div class="overlay" id="overlay"><div><div class="spinner"></div>Chargement des ~10 000 stations…</div></div>
+</div>
+
+<div class="status-banner" id="status-banner" role="status">
+  <span class="sb-dot" aria-hidden="true"></span>
+  <span class="sb-text"><strong id="sb-title">Chargement de la situation…</strong><span class="sb-trend" id="sb-trend"></span></span>
+</div>
+<div class="analyse" id="analyse" hidden>
+  <div class="an-in"><span class="an-lbl" id="an-lbl">Analyse</span><span id="an-txt"></span></div>
+</div>
+
+<div class="dep-hero">
+  <div class="dh-in">
+    <b>4,8 %</b> des 84 stations-service de Haute-Vienne sont actuellement en rupture (4 en rupture partielle, 0 à sec). Relevé du mercredi 23/09/2026 à 20:22.
+    <div class="dh-links">Départements voisins : <a href="https://carte-penurie-essence.fr/departement/creuse/">Creuse</a> · <a href="https://carte-penurie-essence.fr/departement/correze/">Corrèze</a> · <a href="https://carte-penurie-essence.fr/departement/charente/">Charente</a> · <a href="https://carte-penurie-essence.fr/departement/dordogne/">Dordogne</a> · <a href="https://carte-penurie-essence.fr/">France entière</a> · <a href="https://carte-penurie-essence.fr/departement/">Tous les départements</a></div>
+  </div>
+</div>
+<main class="wrap" id="details">
+  <div class="scope" id="scope"></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-terr" aria-controls="p-terr" aria-selected="true"><span class="l">Départements &amp; régions</span><span class="s">Territoires</span></button>
+    <button class="tab" role="tab" id="tab-evo" aria-controls="p-evo" aria-selected="false"><span class="l">Évolution sur 30 jours</span><span class="s">30 jours</span></button>
+    <button class="tab" role="tab" id="tab-new" aria-controls="p-new" aria-selected="false"><span class="l">Nouvelles ruptures</span><span class="s">Nouvelles</span></button>
+    <button class="tab" role="tab" id="tab-prix" aria-controls="p-prix" aria-selected="false"><span class="l">Prix moyen</span><span class="s">Prix moyen</span></button>
+  </div>
+
+  <!-- Onglet 1 : territoires -->
+  <section class="tabpanel" id="p-terr" role="tabpanel" aria-labelledby="tab-terr">
+    <div class="controls">
+      <select id="terr-sel" aria-label="Territoire">
+        <option value="">Tous les départements</option>
+        <option value="allreg">Toutes les régions</option>
+        <optgroup label="Régions" id="og-reg"></optgroup>
+        <optgroup label="Départements" id="og-dep"></optgroup>
+      </select>
+    </div>
+    <div class="card"><div class="tscroll">
+      <table id="t-terr">
+        <thead><tr>
+          <th data-k="name">Territoire</th>
+          <th class="num" data-k="all">Stations</th>
+          <th class="num" data-k="p"><span class="l">Partielle</span><span class="s">Part.</span></th>
+          <th class="num" data-k="t"><span class="l">Totale</span><span class="s">Tot.</span></th>
+          <th class="num" data-k="pct" aria-sort="descending"><span class="l">% touchées</span><span class="s">%</span></th>
+          <th class="num" data-k="d7"><span class="l">vs J-7</span><span class="s">J-7</span></th>
+          <th class="num" data-k="pct" aria-label="Répartition"></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div></div>
+    <p class="hint">Cliquez sur une ligne pour centrer la carte, afficher ses stations et filtrer les graphiques sur ce territoire.</p>
+
+    <h3 id="st-title">Stations en rupture</h3>
+    <div class="card"><div class="tscroll">
+      <table class="stations" id="t-st">
+        <thead><tr><th data-k="status">État</th><th data-k="adr">Adresse</th><th data-k="dep">Dépt</th><th data-k="miss">Carburants manquants</th><th data-k="since">Depuis</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div><div class="more" id="st-more" hidden><button class="btn" type="button">Afficher plus</button></div></div>
+  </section>
+
+  <!-- Onglet 2 : évolution 30 jours -->
+  <section class="tabpanel" id="p-evo" role="tabpanel" aria-labelledby="tab-evo" hidden>
+    <div class="chart-head">
+      <h2 id="h3-title">% de stations en difficulté — relevé toutes les 3 h</h2>
+      <div class="seg" role="group" aria-label="Période" id="h3-range">
+        <button type="button" data-h="168" aria-pressed="true">7 j</button>
+        <button type="button" data-h="336" aria-pressed="false">14 j</button>
+        <button type="button" data-h="720" aria-pressed="false">30 j</button>
+      </div>
+    </div>
+    <div class="stats" id="h3-stats"></div>
+    <div class="card chart-card">
+      <div class="chart" id="h3" role="img"></div>
+      <div class="tip" id="h3-tip" hidden></div>
+    </div>
+    <p class="hint">Part des stations en rupture partielle ou totale, relevée toutes les 3 heures ; le dernier point correspond aux données en direct. Les pointillés rappellent les seuils de couleur de la carte (20, 25, 33 et 50 %). Écarts exprimés en points de pourcentage.</p>
+
+    <div class="stats" id="evo-stats" style="margin-top:28px"></div>
+    <div class="chart-head">
+      <h2 id="evo-title">Stations en rupture — 30 derniers jours</h2>
+      <div class="chart-legend"><span><i class="sw p"></i>Partielle</span><span><i class="sw t"></i>Totale</span></div>
+    </div>
+    <div class="card chart-card">
+      <div class="chart" id="evo" role="img"></div>
+      <div class="tip" id="evo-tip" hidden></div>
+    </div>
+    <p class="hint" id="evo-hint">Les ruptures totales (stations à sec) sont l'indicateur le plus parlant : des ruptures partielles existent en permanence (entre 1 000 et 1 500 stations fin août, hors crise). Un relevé est enregistré chaque matin à partir du flux officiel ; le dernier point correspond aux données en direct.</p>
+
+  </section>
+
+  <!-- Onglet 3 : nouvelles ruptures -->
+  <section class="tabpanel" id="p-new" role="tabpanel" aria-labelledby="tab-new" hidden>
+    <div class="chart-head">
+      <h2 id="new-title">Nouvelles stations en rupture — 7 derniers jours</h2>
+      <div class="chart-legend"><span><i class="sw p"></i>Entrée en rupture partielle</span><span><i class="sw t"></i>Passée à sec</span></div>
+    </div>
+    <div class="card chart-card">
+      <div class="chart-sum" id="new-sum"></div>
+      <div class="chart" id="new" role="img"></div>
+      <div class="tip" id="new-tip" hidden></div>
+    </div>
+    <p class="hint">Stations entrées en rupture chaque jour d'après toutes les déclarations officielles de la journée, y compris celles réapprovisionnées depuis. « Partielle » : la station a commencé à manquer d'au moins un carburant ; « à sec » : elle n'avait plus aucun carburant. Une même station n'est comptée qu'une fois par jour. Le jour en cours (barres claires) est provisoire : il est complété le lendemain à partir du fichier quotidien du ministère. Tous carburants confondus.</p>
+  </section>
+
+  <!-- Onglet 4 : prix moyen -->
+  <section class="tabpanel" id="p-prix" role="tabpanel" aria-labelledby="tab-prix" hidden>
+    <div class="price-tiles" id="price-tiles"></div>
+    <div class="chart-head">
+      <h2 id="prix-title">Prix moyen en France</h2>
+      <div class="seg" role="group" aria-label="Période" id="prix-range">
+        <button type="button" data-r="30" aria-pressed="false">30 j</button>
+        <button type="button" data-r="90" aria-pressed="true">90 j</button>
+        <button type="button" data-r="365" aria-pressed="false">1 an</button>
+      </div>
+    </div>
+    <div class="card chart-card">
+      <div class="pchips" id="prix-chips" style="margin-bottom:8px"></div>
+      <div class="chart" id="prix" role="img"></div>
+      <div class="tip" id="prix-tip" hidden></div>
+    </div>
+    <p class="hint">Moyenne des prix affichés par les stations (prix mis à jour depuis moins de 7 jours), en euros par litre. Historique reconstitué à partir des archives officielles puis complété chaque matin ; le dernier point correspond aux données en direct.</p>
+  </section>
+
+  <!-- Actualités & réseaux sociaux -->
+  <section class="actu" id="actu">
+    <h2>Actualités sur la pénurie</h2>
+    <a class="une" id="une" href="#" target="_blank" rel="noopener" hidden>
+      <span class="une-tag">À la une</span>
+      <span class="une-body"><span class="une-title" id="une-title"></span><span class="une-meta" id="une-meta"></span></span>
+    </a>
+    <div class="actu-grid">
+      <div class="card"><div class="actu-list" id="actu-list"><div class="actu-empty">Chargement des actualités…</div></div></div>
+      <div class="tweets" id="tweets"></div>
+    </div>
+  </section>
+
+  <footer>
+    Données : flux instantané « Prix des carburants en France » publié sous Licence Ouverte par le ministère de l'Économie (<a href="https://www.prix-carburants.gouv.fr/" target="_blank" rel="noopener">prix-carburants.gouv.fr</a>), actualisé toutes les 10 minutes à partir des déclarations des stations. Partielle : au moins un carburant manque. Totale : plus aucun des carburants vendus par la station n'est disponible. Les ruptures déclarées depuis plus de <span id="maxage"></span> jours sans mise à jour sont écartées (déclarations jamais clôturées). Fond de carte © Esri, © contributeurs OpenStreetMap. Contours des départements : IGN / INSEE via france-geojson (Licence Ouverte).
+  </footer>
+</main>
+
+<script>
+(() => {
+  // ---------- Configuration ----------
+  const API = "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json";
+  const HISTORY_URL = "/historique.json";   // généré chaque jour par scripts/snapshot.py (GitHub Actions)
+  const H3_URL = "/releves-3h.json";         // relevés toutes les 3 h (même script)
+  // Chemins racine (et non relatifs) : ces fichiers vivent à la racine du site, y compris
+  // quand la page elle-même est dans /departement/<slug>/ — un chemin relatif irait chercher
+  // au mauvais endroit depuis un sous-dossier.
+  const REFRESH_MIN = 10;
+  const MAX_AGE_DAYS = 60;          // au-delà, une « rupture temporaire » jamais clôturée est ignorée
+  const PRICE_MAX_AGE_DAYS = 7;
+  const FUELS = [
+    {k:"gazole", label:"Gazole"}, {k:"e10", label:"SP95-E10"}, {k:"sp95", label:"SP95"},
+    {k:"sp98", label:"SP98"}, {k:"e85", label:"E85"}, {k:"gplc", label:"GPLc"}
+  ];
+  const FUEL_LABEL = Object.fromEntries(FUELS.map(f => [f.k, f.label]));
+  document.getElementById("maxage").textContent = MAX_AGE_DAYS;
+
+  // ---------- Helpers ----------
+  const $ = s => document.querySelector(s);
+  const nf = new Intl.NumberFormat("fr-FR");
+  const pf = new Intl.NumberFormat("fr-FR", {maximumFractionDigits:1, minimumFractionDigits:1});
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  const fuelKey = s => {
+    const n = norm(s).replace(/[^a-z0-9]/g, "");
+    if (n.startsWith("gazole") || n === "diesel") return "gazole";
+    if (n.includes("e10")) return "e10";
+    if (n === "sp95") return "sp95";
+    if (n === "sp98") return "sp98";
+    if (n === "e85") return "e85";
+    if (n.startsWith("gpl")) return "gplc";
+    return null;
+  };
+  const toList = v => Array.isArray(v) ? v : (typeof v === "string" && v.trim() ? v.split(/[;,|]/) : []);
+  const fuelSet = v => new Set(toList(v).map(fuelKey).filter(Boolean));
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  // Heure française partout, changement d'heure (été / hiver) compris.
+  const TZ = "Europe/Paris";
+  const fmtDate = d => d ? d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", timeZone:TZ}) + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit", timeZone:TZ}) : "";
+  const parisParts = new Intl.DateTimeFormat("en-US", {timeZone:TZ, hourCycle:"h23", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const offCache = new Map();
+  const parisOffset = ms => {           // écart (ms) entre l'heure de Paris et l'heure universelle à cet instant
+    const h = Math.floor(ms / 36e5);     // mis en cache par heure : ~10 000 stations à traiter
+    if (offCache.has(h)) return offCache.get(h);
+    const g = {}; for (const p of parisParts.formatToParts(new Date(h * 36e5))) g[p.type] = +p.value;
+    const off = Date.UTC(g.year, g.month - 1, g.day, g.hour, g.minute, g.second) - h * 36e5;
+    offCache.set(h, off);
+    return off;
+  };
+  // Le flux officiel donne l'heure affichée en station (heure de Paris) mais l'étiquette « +00:00 » :
+  // on lit donc l'heure telle quelle comme une heure de Paris.
+  const parseDate = v => {
+    if (!v) return null;
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) { const d = new Date(v); return isNaN(d) ? null : d; }
+    const wall = Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0));
+    let t = wall - parisOffset(wall);
+    t = wall - parisOffset(t);          // 2e passage : exact autour du changement d'heure
+    return new Date(t);
+  };
+  const normDep = c => { c = String(c ?? "").trim().toUpperCase(); return /^\d$/.test(c) ? "0" + c : c; };
+  const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const dayStart = (offset = 0) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + offset); return d; };
+  const pf3 = v => new Intl.NumberFormat("fr-FR", {minimumFractionDigits:3, maximumFractionDigits:3}).format(v);
+  const varPct = (now, then) => (then == null || then === 0) ? null : (now - then) / then * 100;
+  const fmtVar = (v, short) => {
+    if (v == null) return `<span style="opacity:.7">n.d.</span>`;
+    const cls = v > 0.05 ? "up" : v < -0.05 ? "down" : "";
+    const arrow = v > 0.05 ? "▲" : v < -0.05 ? "▼" : "=";
+    return `<span class="${cls}">${arrow} ${v > 0 ? "+" : ""}${pf.format(v)} %</span>`;
+  };
+
+  // ---------- Transformation d'un enregistrement officiel ----------
+  function parseStation(r, hasRuptureFields, now) {
+    let lat, lon;
+    if (r.geom && typeof r.geom === "object") { lat = +r.geom.lat; lon = +r.geom.lon; }
+    if (!(lat && lon)) {
+      lat = +r.latitude; lon = +r.longitude;
+      if (Math.abs(lat) > 90) { lat /= 100000; lon /= 100000; }
+    }
+    if (!isFinite(lat) || !isFinite(lon) || (!lat && !lon)) return null;
+
+    const dispo = fuelSet(r.carburants_disponibles);
+    const def = fuelSet(r.carburants_rupture_definitive);
+    const temp = new Map();
+    if (hasRuptureFields) {
+      for (const k of fuelSet(r.carburants_rupture_temporaire)) temp.set(k, null);
+      for (const f of FUELS) {
+        const type = r[f.k + "_rupture_type"];
+        const debut = parseDate(r[f.k + "_rupture_debut"]);
+        if (type && /temp/i.test(type)) temp.set(f.k, debut);
+        else if (type && /d[ée]f/i.test(type)) def.add(f.k);
+        else if (temp.has(f.k) && debut) temp.set(f.k, debut);
+      }
+    } else {
+      for (const k of fuelSet(r.carburants_indisponibles)) temp.set(k, null);
+    }
+    for (const k of [...temp.keys()]) {
+      if (dispo.has(k) || def.has(k)) temp.delete(k);
+      else { const d = temp.get(k); if (d && (now - d) / 864e5 > MAX_AGE_DAYS) temp.delete(k); }
+    }
+    const missing = [...temp.keys()];
+    const status = missing.length === 0 ? "o" : (dispo.size === 0 ? "t" : "p");
+    const dates = [...temp.values()].filter(Boolean);
+    const since = dates.length ? new Date(Math.min(...dates)) : null;
+    const px = {};                 // prix récents (moins de 7 jours) des carburants disponibles
+    for (const f of FUELS) {
+      const p = +r[f.k + "_prix"], m = parseDate(r[f.k + "_maj"]);
+      if (p > 0.2 && p < 5 && m && (now - m) / 864e5 <= PRICE_MAX_AGE_DAYS && !missing.includes(f.k)) px[f.k] = p;
+    }
+    const dep = String(r.departement ?? "").trim() || "Non renseigné";
+    const depCode = normDep(r.code_departement);
+    const reg = String(r.region ?? "").trim() || "Non renseignée";
+    return {
+      id: r.id, lat, lon, status, missing, dispo:[...dispo], since, px,
+      adr: [r.adresse, [r.cp, r.ville].filter(Boolean).join(" ")].filter(Boolean).join(", "),
+      dep, depCode, reg, depLabel: depCode ? `${dep} (${depCode})` : dep
+    };
+  }
+
+  // ---------- État ----------
+  let stations = [];
+  let history = [];                // [{date:"AAAA-MM-JJ", all, p, t, deps:{code:[all,p,t]}}]
+  let fuelFilter = "all";
+  let level = "dep";
+  let sortKey = "pct", sortDir = -1;
+  let scope = null;                // {type:"dep"|"reg", key, code?}
+  let depScopeDone = false;        // pour les pages /departement/… : centre une seule fois, au premier chargement
+  let stSort = {k:"status", dir:1};
+  let stLimit = 100;
+  let activeTab = "terr";
+
+  // ---------- Carte ----------
+  const map = L.map("map", {preferCanvas:true, minZoom:4, maxZoom:16}).setView([46.6, 2.4], innerWidth < 640 ? 5 : 6);
+  const dark = () => document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  // Fond de carte Esri « Canvas » gris : sans clé d'API, fonctionne aussi en ouvrant le fichier en local
+  // (les serveurs OpenStreetMap refusent les pages sans adresse web, d'où le message d'erreur sur la carte).
+  const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/";
+  const tileUrl = part => `${ESRI}World_${dark() ? "Dark" : "Light"}_Gray_${part}/MapServer/tile/{z}/{y}/{x}`;
+  const baseTiles = L.tileLayer(tileUrl("Base"), {
+    maxZoom:16, attribution:'Fond © Esri, HERE, Garmin, © contributeurs OpenStreetMap'
+  }).addTo(map);
+  const refTiles = L.tileLayer(tileUrl("Reference"), {maxZoom:16, pane:"overlayPane"}).addTo(map);
+  const renderer = L.canvas({padding:.5});
+  const layers = {o:L.layerGroup().addTo(map), p:L.layerGroup().addTo(map), t:L.layerGroup().addTo(map)};
+
+  function popupHtml(s) {
+    const lbl = s.status === "t" ? "Rupture totale" : s.status === "p" ? "Rupture partielle" : "Approvisionnée";
+    const miss = s.missing.map(k => FUEL_LABEL[k]).join(", ");
+    const ok = s.dispo.map(k => FUEL_LABEL[k]).join(", ");
+    const nm = stationNames[String(s.id)];
+    return `${nm ? `<div class="pop-name">${esc(nm)}</div>` : ""}<div class="pop-status ${s.status}">${lbl}</div>
+      <div>${esc(s.adr)}</div>
+      ${miss ? `<div><b>Manque :</b> ${esc(miss)}</div>` : ""}
+      ${ok ? `<div><b>Disponible :</b> ${esc(ok)}</div>` : ""}
+      ${s.since ? `<div style="color:var(--muted)">Depuis le ${fmtDate(s.since)}</div>` : ""}
+      <div style="margin-top:4px"><a href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}" target="_blank" rel="noopener">Itinéraire</a></div>`;
+  }
+  const sellsFuel = s => fuelFilter === "all" || s.dispo.includes(fuelFilter) || s.missing.includes(fuelFilter);
+  function effStatus(s) {
+    if (fuelFilter === "all") return s.status;
+    if (s.missing.includes(fuelFilter)) return s.status === "t" ? "t" : "p";
+    return "o";
+  }
+  const inScope = s => !scope || (scope.type === "dep" ? s.depLabel === scope.key : s.reg === scope.key);
+
+  // ---------- Mode départements ----------
+  // Seuils (en % de stations en difficulté) : jaune, orange, rouge, noir
+  const LEVELS = [20, 25, 33, 50];
+  const LEVEL_VARS = ["--dep-low", "--lv-y", "--lv-o", "--lv-r", "--lv-b"];
+  const levelOf = pct => LEVELS.filter(t => pct >= t).length;          // 0 à 4
+  // Couche des départements, dessinée sous les stations (même moteur de rendu : les points restent cliquables)
+  let depLayer = null;
+  function ensureDepLayer() {
+    if (!depLayer && window.DEPARTEMENTS) depLayer = L.geoJSON(window.DEPARTEMENTS, {renderer, style: () => ({})});
+    return depLayer;
+  }
+  window.addEventListener("departements-charges", () => { if ($("#show-dep").checked) toggleDeps(); });
+  function depStats() {
+    const m = {};
+    for (const s of stations) {
+      if (!sellsFuel(s) || !s.depCode) continue;
+      const a = m[s.depCode] || (m[s.depCode] = {all:0, p:0, t:0, name:s.dep, label:s.depLabel});
+      a.all++; const e = effStatus(s); if (e === "p") a.p++; else if (e === "t") a.t++;
+    }
+    for (const k in m) m[k].pct = m[k].all ? (m[k].p + m[k].t) / m[k].all * 100 : 0;
+    return m;
+  }
+  const depColor = pct => cssVar(LEVEL_VARS[levelOf(pct)]);
+  function drawDeps() {
+    if (!ensureDepLayer()) return;
+    const st = depStats(), c = [0, 0, 0, 0, 0];
+    depLayer.eachLayer(l => {
+      const code = l.feature.properties.code, a = st[code];
+      const pct = a ? a.pct : 0;
+      const lv = levelOf(pct);
+      if (a) c[lv]++;
+      const edge = cssVar("--dep-edge");
+      l.setStyle({fillColor: a ? depColor(pct) : cssVar("--surface-2"), fillOpacity: a ? [.18, .55, .6, .6, .7][lv] : .1,
+                  color: edge, weight: 1, opacity: .9});
+      const name = l.feature.properties.nom;
+      const html = a ? `<div class="dep-tip"><b>${esc(name)} (${code})</b><br><b class="big">${pf.format(pct)} %</b> des stations en difficulté<br>` +
+        `${nf.format(a.p)} en rupture partielle · ${nf.format(a.t)} à sec<br><span style="color:var(--muted)">${nf.format(a.all)} stations</span></div>`
+        : `<div class="dep-tip"><b>${esc(name)}</b><br>Pas de données</div>`;
+      l.unbindTooltip(); l.off("click mouseover mouseout");
+      l.bindTooltip(html, {sticky:true, direction:"top", offset:[0, -8]});
+      l.on("click", () => { if (a) showDepStations(code, a.label); });
+      l.on("mouseover", () => l.setStyle({weight:2.5, color:cssVar("--text")}));
+      l.on("mouseout", () => l.setStyle({weight:1, color:edge}));
+    });
+    c.forEach((n, i) => $("#d-" + i).textContent = n);
+  }
+  function showDepStations(code, label) {
+    const pts = stations.filter(s => s.depCode === code);
+    if (!pts.length) return;
+    scope = {type:"dep", key:label, code};
+    map.fitBounds(L.latLngBounds(pts.map(s => [s.lat, s.lon])), {padding:[30, 30], maxZoom:11});
+    redrawDetails();
+  }
+  function toggleDeps() {
+    ensureDepLayer();
+    const on = $("#show-dep").checked;
+    $("#leg-dep").hidden = !on;
+    $("#dep-missing").hidden = !on || !!depLayer;
+    if (!depLayer) return;
+    if (on) { if (!map.hasLayer(depLayer)) { depLayer.addTo(map); depLayer.bringToBack(); } drawDeps(); }
+    else map.removeLayer(depLayer);
+  }
+  $("#show-dep").addEventListener("change", toggleDeps);
+
+  function drawMap() {
+    if ($("#show-dep").checked) toggleDeps();
+    Object.values(layers).forEach(l => l.clearLayers());
+    const col = {p:cssVar("--partial"), t:cssVar("--total"), o:cssVar("--ok")};
+    const showO = $("#show-o").checked;
+    const counts = {p:0, t:0, o:0};
+    for (const st of ["o", "p", "t"]) {
+      for (const s of stations) {
+        if (!sellsFuel(s)) continue;
+        const e = effStatus(s);
+        if (e !== st) continue;
+        counts[e]++;
+        if (e === "o" && !showO) continue;
+        L.circleMarker([s.lat, s.lon], {
+          renderer, radius: e === "o" ? 4.5 : 5.5, weight: e === "o" ? 1 : 1.2,
+          color: "#fff", fillColor: col[e], fillOpacity: .95
+        }).bindPopup(() => popupHtml(s)).addTo(layers[e]);
+      }
+    }
+    $("#l-p").textContent = nf.format(counts.p);
+    $("#l-t").textContent = nf.format(counts.t);
+    $("#l-o").textContent = nf.format(counts.o);
+  }
+
+  // ---------- Historique ----------
+  // Valeurs {all,p,t} d'un relevé pour le périmètre courant
+  function histValue(day, sc = scope) {
+    if (!day || day.all == null) return null;
+    if (!sc) return {all:day.all, p:day.p, t:day.t};
+    if (!day.deps) return null;
+    let codes;
+    if (sc.type === "dep") codes = [sc.code];
+    else codes = [...new Set(stations.filter(s => s.reg === sc.key).map(s => s.depCode))];
+    let all = 0, p = 0, t = 0, found = false;
+    for (const c of codes) { const v = day.deps[c]; if (v) { found = true; all += v[0]; p += v[1]; t += v[2]; } }
+    return found ? {all, p, t} : null;
+  }
+  const histAt = offsetDays => {
+    const target = isoDay(dayStart(-offsetDays));
+    // relevé exact, sinon le plus proche dans la journée précédente
+    return history.find(d => d.date === target) || null;
+  };
+  // Valeurs en direct (tous carburants) pour un périmètre
+  function liveValue(sc = scope) {
+    let all = 0, p = 0, t = 0;
+    for (const s of stations) {
+      if (sc && !(sc.type === "dep" ? s.depLabel === sc.key : s.reg === sc.key)) continue;
+      all++; if (s.status === "p") p++; else if (s.status === "t") t++;
+    }
+    return {all, p, t};
+  }
+
+  // ---------- Bandeau défilant ----------
+  function drawTicker() {
+    const now = liveValue(null);
+    const ago24 = h3At(24), v24 = k => ago24 && ago24.v ? varPct(now[k], ago24.v[k]) : null;
+    const v7 = k => { const h = histValue(histAt(7), null); return h ? varPct(now[k], h[k]) : null; };
+    const evo = k => `<b>${fmtVar(v24(k))}</b> <span class="k">en 24 h</span> <span class="k">·</span> <b>${fmtVar(v7(k))}</b> <span class="k">en 7 jours</span>`;
+    const items2 = [
+      `<span class="dot t"></span><span class="k">Stations à sec (rupture totale)</span> <b style="font-size:15px">${nf.format(now.t)}</b> ${evo("t")}`,
+      `<span class="dot p"></span><span class="k">Stations en rupture partielle</span> <b style="font-size:15px">${nf.format(now.p)}</b> ${evo("p")}`
+    ].map(h => `<span class="tk-item">${h}</span>`).join("");
+    const track = $("#tk-track");
+    // on répète les deux éléments jusqu'à remplir la largeur, pour un défilement continu
+    let group = items2;
+    track.innerHTML = `<div class="tk-group">${group}</div>`;
+    const viewW = track.parentElement.clientWidth || innerWidth;
+    for (let i = 0; i < 6 && track.firstElementChild.scrollWidth < viewW; i++) {
+      group += items2; track.innerHTML = `<div class="tk-group">${group}</div>`;
+    }
+    track.innerHTML = `<div class="tk-group">${group}</div><div class="tk-group" aria-hidden="true">${group}</div>`;
+    const w = track.firstElementChild.scrollWidth;
+    track.style.setProperty("--dur", Math.max(25, w / 70) + "s");   // ~70 px/s
+  }
+
+  // ---------- Onglet territoires ----------
+  function aggregate() {
+    const m = new Map();
+    for (const s of stations) {
+      if (!sellsFuel(s)) continue;
+      if (level === "dep" ? !s.depCode : s.reg === "Non renseignée") continue;   // stations sans département connu
+      const key = level === "dep" ? s.depLabel : s.reg;
+      let a = m.get(key);
+      if (!a) {
+        a = {key, name:key, reg:s.reg, code: level === "dep" ? s.depCode : "", all:0, p:0, t:0, minLat:90, maxLat:-90, minLon:180, maxLon:-180};
+        m.set(key, a);
+      }
+      a.all++;
+      const e = effStatus(s);
+      if (e === "p") a.p++; else if (e === "t") a.t++;
+      a.minLat = Math.min(a.minLat, s.lat); a.maxLat = Math.max(a.maxLat, s.lat);
+      a.minLon = Math.min(a.minLon, s.lon); a.maxLon = Math.max(a.maxLon, s.lon);
+    }
+    const h7 = histAt(7);
+    for (const a of m.values()) {
+      a.pct = a.all ? (a.p + a.t) / a.all * 100 : 0;
+      const h = fuelFilter === "all" ? histValue(h7, {type:level, key:a.key, code:a.code}) : null;
+      a.d7 = h ? varPct(a.p + a.t, h.p + h.t) : null;
+    }
+    return [...m.values()];
+  }
+
+  function parseTerrSel() {
+    const v = $("#terr-sel").value;
+    if (v === "allreg") return {level:"reg", name:""};
+    if (v.startsWith("dep:")) return {level:"dep", name:v.slice(4)};
+    if (v.startsWith("reg:")) return {level:"reg", name:v.slice(4)};
+    return {level:"dep", name:""};
+  }
+  const selRegion = () => { const s = parseTerrSel(); return s.level === "reg" ? s.name : ""; };
+
+  let terrRows = [];
+  function drawTerritories() {
+    const sel = parseTerrSel();
+    level = sel.level;
+    terrRows = aggregate().filter(a => !sel.name || a.name === sel.name);
+    terrRows.sort((a, b) => {
+      const va = a[sortKey], vb = b[sortKey];
+      if (va == null) return 1; if (vb == null) return -1;
+      return (typeof va === "string" ? va.localeCompare(vb, "fr") : va - vb) * sortDir;
+    });
+    document.querySelectorAll("#t-terr th").forEach(th => {
+      th.removeAttribute("aria-sort");
+      if (th.dataset.k === sortKey && th.textContent) th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");
+    });
+    const tb = $("#t-terr tbody");
+    if (!terrRows.length) { tb.innerHTML = `<tr><td colspan="7" style="color:var(--muted)">Aucun territoire ne correspond.</td></tr>`; return; }
+    tb.innerHTML = terrRows.map((a, i) => {
+      const wp = a.all ? a.p / a.all * 100 : 0, wt = a.all ? a.t / a.all * 100 : 0;
+      const isSel = scope && scope.type === level && scope.key === a.key;
+      return `<tr data-i="${i}" class="${isSel ? "sel" : ""}">
+        <td>${esc(a.name)}${level === "dep" ? `<div style="color:var(--muted);font-size:12.5px">${esc(a.reg)}</div>` : ""}</td>
+        <td class="num">${nf.format(a.all)}</td>
+        <td class="num">${nf.format(a.p)}</td>
+        <td class="num">${nf.format(a.t)}</td>
+        <td class="num pct"><span class="sq lv" style="background:var(${LEVEL_VARS[levelOf(a.pct)]})${levelOf(a.pct) === 4 ? ";border-color:var(--lv-b-edge)" : ""}"></span>${pf.format(a.pct)} %</td>
+        <td class="num">${fmtVar(a.d7)}</td>
+        <td class="num"><div class="bar" title="${pf.format(wp)} % partielle · ${pf.format(wt)} % totale">${wt ? `<i class="t" style="width:${wt}%"></i>` : ""}${wp ? `<i class="p" style="width:${wp}%"></i>` : ""}</div></td>
+      </tr>`;
+    }).join("");
+  }
+
+  function scopedRuptures() { return stations.filter(s => effStatus(s) !== "o" && inScope(s) && (scope || !selRegion() || s.reg === selRegion())); }
+  const scopeName = () => scope ? scope.key : (selRegion() || "France entière");
+
+  function drawStations() {
+    const list = scopedRuptures();
+    const rank = {t:0, p:1};
+    const k = stSort.k, d = stSort.dir;
+    list.sort((a, b) => {
+      let r = 0;
+      if (k === "status") r = rank[effStatus(a)] - rank[effStatus(b)] || (b.since || 0) - (a.since || 0);
+      else if (k === "since") r = (a.since || 0) - (b.since || 0);
+      else if (k === "miss") r = a.missing.length - b.missing.length;
+      else if (k === "dep") r = (a.depCode || a.dep).localeCompare(b.depCode || b.dep, "fr", {numeric:true});
+      else r = String(a[k]).localeCompare(String(b[k]), "fr");
+      return r * d;
+    });
+    $("#st-title").textContent = `Stations en rupture — ${scopeName()} (${nf.format(list.length)})`;
+    document.querySelectorAll("#t-st th").forEach(th => {
+      th.removeAttribute("aria-sort");
+      if (th.dataset.k === k) th.setAttribute("aria-sort", d > 0 ? "ascending" : "descending");
+    });
+    const tb = $("#t-st tbody");
+    if (!list.length) { tb.innerHTML = `<tr><td colspan="5" style="color:var(--muted)">Aucune station en rupture signalée ici.</td></tr>`; $("#st-more").hidden = true; return; }
+    tb.innerHTML = list.slice(0, stLimit).map(s => {
+      const e = effStatus(s);
+      return `<tr data-id="${esc(s.id)}">
+        <td><span class="tag ${e}">${e === "t" ? "Totale" : "Partielle"}</span></td>
+        <td>${esc(s.adr)}</td>
+        <td>${esc(s.depCode || s.dep)}</td>
+        <td>${s.missing.map(m => `<span class="fuel-miss">${FUEL_LABEL[m]}</span>`).join("")}</td>
+        <td style="white-space:nowrap">${s.since ? fmtDate(s.since) : "—"}</td>
+      </tr>`;
+    }).join("");
+    $("#st-more").hidden = list.length <= stLimit;
+  }
+
+  // ---------- Outils graphiques ----------
+  function niceScale(max) {
+    max = Math.max(1, max);
+    const step = Math.pow(10, Math.floor(Math.log10(max)));
+    const nice = [1, 2, 2.5, 5, 10].map(k => k * step).find(v => max / v <= 5) || step * 10;
+    return {top: Math.ceil(max / nice) * nice, nice};
+  }
+  function bindTip(box, tipEl, html) {
+    const card = box.parentElement;
+    box.querySelectorAll(".hit").forEach(el => {
+      el.addEventListener("mousemove", ev => {
+        tipEl.innerHTML = html(+el.dataset.i);
+        tipEl.hidden = false;
+        box.dispatchEvent(new CustomEvent("hoverindex", {detail:+el.dataset.i}));
+        const r = card.getBoundingClientRect();
+        let left = ev.clientX - r.left + 14;
+        if (left + tipEl.offsetWidth > r.width - 4) left = ev.clientX - r.left - tipEl.offsetWidth - 14;
+        tipEl.style.left = Math.max(4, left) + "px";
+        tipEl.style.top = Math.max(4, ev.clientY - r.top - tipEl.offsetHeight - 10) + "px";
+      });
+      el.addEventListener("mouseleave", () => { tipEl.hidden = true; box.dispatchEvent(new CustomEvent("hoverindex", {detail:-1})); });
+    });
+  }
+  const tipRows = (title, p, t) => `<div style="font-weight:600;margin-bottom:3px">${title}</div>
+    <div class="r"><i class="sw p"></i>Partielle<b>${nf.format(p)}</b></div>
+    <div class="r"><i class="sw t"></i>Totale<b>${nf.format(t)}</b></div>`;
+
+  // ---------- Onglet évolution 30 jours ----------
+  function evoSeries() {
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = dayStart(-i), key = isoDay(d);
+      let v = null;
+      if (i === 0) v = liveValue();
+      else v = histValue(history.find(h => h.date === key));
+      days.push({d, key, v, live: i === 0});
+    }
+    return days;
+  }
+  function drawEvo() {
+    const box = $("#evo"), days = evoSeries();
+    $("#evo-title").textContent = `Stations en rupture — 30 derniers jours · ${scopeName()}`;
+    const now = liveValue();
+    const nowT = now.p + now.t;
+    const stat = (lbl, off) => {
+      const h = histValue(histAt(off));
+      const v = h ? varPct(now.t, h.t) : null, va = h ? varPct(nowT, h.p + h.t) : null;
+      return `<div class="stat"><div class="l">Ruptures totales ${lbl}</div><div class="v">${fmtVar(v)}</div>` +
+        `<div class="d">${h ? `${nf.format(h.t)} alors · toutes ruptures ${fmtVar(va)}` : "pas encore de relevé"}</div></div>`;
+    };
+    $("#evo-stats").innerHTML =
+      `<div class="stat"><div class="l"><span class="dot t"></span> Stations à sec maintenant</div><div class="v" style="color:var(--total)">${nf.format(now.t)}</div><div class="d">+ ${nf.format(now.p)} en rupture partielle</div></div>` +
+      stat("vs veille", 1) + stat("vs J-7", 7) + stat("vs J-30", 30);
+
+    const pts = days.filter(x => x.v);
+    if (pts.length < 2) {
+      box.innerHTML = `<div class="empty">L'historique est en cours de constitution : la courbe apparaîtra dès le deuxième relevé quotidien.<br>(Fichier <code>historique.json</code> ${history.length ? `: ${history.length} relevé(s)` : "introuvable"}.)</div>`;
+      return;
+    }
+    const W = Math.max(300, box.clientWidth || 700), H = W < 480 ? 230 : 280;
+    const m = {l:40, r: W < 480 ? 14 : 70, t:14, b:26};
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const {top, nice} = niceScale(Math.max(...pts.map(x => Math.max(x.v.p, x.v.t))));
+    const x = i => m.l + iw * i / 29, y = v => m.t + ih - v / top * ih;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+    for (let v = 0; v <= top; v += nice)
+      svg += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${nf.format(v)}</text>`;
+    days.forEach((dd, i) => {
+      if (i % (W < 480 ? 7 : 5) === 1 || i === 29)
+        svg += `<text class="axis" x="${x(i)}" y="${H - 7}" text-anchor="middle"${i === 29 ? ' font-weight="600"' : ""}>${i === 29 ? "Auj." : dd.d.toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}</text>`;
+    });
+    const path = key => {
+      let d = "", pen = false;
+      days.forEach((dd, i) => {
+        if (!dd.v) { pen = false; return; }
+        d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(dd.v[key]).toFixed(1)}`; pen = true;
+      });
+      return d;
+    };
+    svg += `<path class="line lp" d="${path("p")}" style="stroke-width:1.5"/><path class="line lt" d="${path("t")}" style="stroke-width:3"/>`;
+    // points isolés (sans voisin) visibles
+    days.forEach((dd, i) => {
+      if (!dd.v) return;
+      const lone = !(days[i - 1] && days[i - 1].v) && !(days[i + 1] && days[i + 1].v);
+      if (lone || dd.live) svg += `<circle class="mk" cx="${x(i)}" cy="${y(dd.v.p)}" r="4" fill="var(--partial)"/><circle class="mk" cx="${x(i)}" cy="${y(dd.v.t)}" r="4" fill="var(--total)"/>`;
+    });
+    // étiquettes directes en fin de courbe
+    const last = days[29].v;
+    if (W >= 480 && last) {
+      let yp = y(last.p), yt = y(last.t);
+      if (Math.abs(yp - yt) < 14) { if (yp < yt) { yp -= 7; yt += 7; } else { yp += 7; yt -= 7; } }
+      svg += `<text class="lbl" x="${x(29) + 8}" y="${yp + 4}" fill="var(--text)">${nf.format(last.p)} <tspan fill="var(--muted)" font-weight="400">part.</tspan></text>`;
+      svg += `<text class="lbl" x="${x(29) + 8}" y="${yt + 4}" fill="var(--text)">${nf.format(last.t)} <tspan fill="var(--muted)" font-weight="400">tot.</tspan></text>`;
+    }
+    svg += `<g id="evo-hover"></g>`;
+    days.forEach((dd, i) => svg += `<rect class="hit" data-i="${i}" x="${x(i) - iw / 58}" y="${m.t}" width="${iw / 29}" height="${ih}"/>`);
+    svg += `</svg>`;
+    box.innerHTML = svg;
+    box.setAttribute("aria-label", "Évolution du nombre de stations en rupture : " +
+      pts.map(p => `${p.d.toLocaleDateString("fr-FR")} ${p.v.p} partielles, ${p.v.t} totales`).join(" ; "));
+    const hov = box.querySelector("#evo-hover");
+    box.addEventListener("hoverindex", e => {
+      const i = e.detail, dd = days[i];
+      hov.innerHTML = (i < 0 || !dd || !dd.v) ? "" :
+        `<line class="xh" x1="${x(i)}" x2="${x(i)}" y1="${m.t}" y2="${m.t + ih}"/>` +
+        `<circle class="mk" cx="${x(i)}" cy="${y(dd.v.p)}" r="5" fill="var(--partial)"/><circle class="mk" cx="${x(i)}" cy="${y(dd.v.t)}" r="5" fill="var(--total)"/>`;
+    });
+    bindTip(box, $("#evo-tip"), i => {
+      const dd = days[i];
+      const title = dd.d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"}) + (dd.live ? " (en direct)" : "");
+      return dd.v ? tipRows(title, dd.v.p, dd.v.t) + `<div class="r" style="color:var(--muted)">Stations touchées<b style="color:var(--text)">${dd.v.all ? pf.format((dd.v.p + dd.v.t) / dd.v.all * 100) : "–"} %</b></div>`
+                  : `<div style="font-weight:600">${title}</div><div style="color:var(--muted)">Pas de relevé ce jour-là</div>`;
+    });
+  }
+
+  // ---------- % de stations en difficulté, toutes les 3 h ----------
+  let h3Range = 168;
+  const pctOf = v => v && v.all ? (v.p + v.t) / v.all * 100 : null;
+  const fmtPts = d => d == null ? `<span style="opacity:.7">n.d.</span>` :
+    `<span class="${d > 0.05 ? "up" : d < -0.05 ? "down" : ""}">${d > 0.05 ? "▲" : d < -0.05 ? "▼" : "="} ${d > 0 ? "+" : ""}${pf.format(d)} pts</span>`;
+  function h3At(hoursAgo) {                  // relevé le plus proche (à ±2 h) d'il y a N heures
+    const target = Date.now() - hoursAgo * 36e5;
+    let best = null;
+    for (const x of releves3h) if (Math.abs(x.d - target) <= 2 * 36e5 && (!best || Math.abs(x.d - target) < Math.abs(best.d - target))) best = x;
+    return best ? {d: best.d, v: histValue(best)} : null;
+  }
+
+  // ---------- Bandeau d'état national ----------
+  const SEUILS_ETAT = [
+    {max:10,  cls:"ok",     titre:"Situation normale",
+     msg:"Approvisionnement normal sur l'ensemble du territoire."},
+    {max:15,  cls:"y",      titre:"Tensions localisées",
+     msg:"Des tensions apparaissent dans certaines zones : mieux vaut vérifier la disponibilité avant de se déplacer dans les secteurs concernés."},
+    {max:25,  cls:"o",      titre:"Situation dégradée",
+     msg:"La situation se dégrade dans plusieurs régions : certaines stations sont à sec, pensez à faire le plein en avance et à repérer une station de secours."},
+    {max:35,  cls:"o2",     titre:"Situation très dégradée",
+     msg:"Situation tendue sur une large partie du territoire : les stations encore approvisionnées peuvent être prises d'assaut, avec des files d'attente et un risque de rupture rapide de leurs stocks."},
+    {max:Infinity, cls:"r", titre:"Situation critique",
+     msg:"Pénurie généralisée sur le territoire. Dans les stations où il reste du carburant, la file d'attente peut atteindre plusieurs heures aux heures de pointe."},
+  ];
+  const SB_COLORS = {ok:"var(--ok)", y:"var(--lv-y)", o:"var(--partial)", o2:"var(--lv-o)", r:"var(--total)"};
+  function drawStatusBanner() {
+    const pct = pctOf(liveValue(null));
+    const banner = $("#status-banner");
+    if (pct == null) { $("#sb-title").textContent = "Chargement de la situation…"; return; }
+    const etat = SEUILS_ETAT.find(e => pct <= e.max);
+    banner.style.setProperty("--sb-c", SB_COLORS[etat.cls]);
+    $("#sb-title").textContent = `${etat.titre} (${pf.format(pct)} % des stations touchées) — ${etat.msg}`;
+    const h = h3At(24), p24 = h && pctOf(h.v);
+    $("#sb-trend").innerHTML = p24 != null ? fmtPts(pct - p24) + " <span style=\"opacity:.8\">sur 24 h</span>" : "";
+  }
+
+  // ---------- Analyse automatique : zones les plus touchées et plus fortes hausses sur 24 h ----------
+  // Population des départements (milliers d'habitants, ordre de grandeur INSEE)
+  const DEP_POP = {"01":660,"02":525,"03":335,"04":166,"05":141,"06":1100,"07":330,"08":270,"09":155,"10":310,"11":375,"12":280,
+    "13":2050,"14":700,"15":144,"16":350,"17":660,"18":300,"19":240,"2A":160,"2B":185,"21":535,"22":605,"23":116,"24":415,
+    "25":545,"26":520,"27":600,"28":430,"29":915,"30":750,"31":1430,"32":190,"33":1650,"34":1200,"35":1100,"36":218,"37":610,
+    "38":1280,"39":258,"40":420,"41":330,"42":765,"43":227,"44":1450,"45":680,"46":174,"47":330,"48":76,"49":820,"50":495,
+    "51":565,"52":172,"53":307,"54":730,"55":183,"56":760,"57":1045,"58":202,"59":2610,"60":830,"61":280,"62":1460,"63":660,
+    "64":690,"65":230,"66":480,"67":1150,"68":770,"69":1900,"70":235,"71":550,"72":565,"73":440,"74":830,"75":2130,"76":1250,
+    "77":1430,"78":1450,"79":375,"80":570,"81":390,"82":260,"83":1080,"84":560,"85":690,"86":440,"87":370,"88":360,"89":335,
+    "90":140,"91":1310,"92":1620,"93":1650,"94":1410,"95":1250,"971":385,"972":360,"973":290,"974":870,"976":310};
+
+  // Créneaux d'analyse (heure de Paris) : le texte ne change qu'à ces heures-là, pour tout le monde.
+  // On retient le relevé officiel du matin (7-9 h), du midi (13-15 h) et du soir (19-21 h) : un seul relevé
+  // tombe dans chaque fenêtre, été comme hiver, donc le texte change 3 fois par jour et reste figé entre-temps.
+  const paris = d => { const g = {}; for (const x of parisParts.formatToParts(d)) g[x.type] = +x.value; return g; };
+  const FENETRES = [[7, 9, "ce matin"], [13, 15, "ce midi"], [19, 21, "ce soir"]];
+  function dernierCreneau() {
+    const now = Date.now();
+    for (let i = releves3h.length - 1; i >= 0; i--) {
+      const x = releves3h[i];
+      if (!x.deps || x.d > now) continue;
+      if (now - x.d > 14 * 36e5) return null;                 // relevés arrêtés : on passe en direct
+      const g = paris(x.d), f = FENETRES.find(([a, b]) => g.hour >= a && g.hour <= b);
+      if (!f) continue;
+      const today = paris(new Date(now));
+      const moment = g.day === today.day ? f[2] : (f[2] === "ce soir" ? "hier soir" : "hier");
+      return {pt: x, moment, heure: `${g.hour} h ${String(g.minute).padStart(2, "0")}`};
+    }
+    return null;
+  }
+  const nearest = (t, tol) => {
+    let best = null;
+    for (const x of releves3h) if (x.deps && Math.abs(x.d - t) <= tol && (!best || Math.abs(x.d - t) < Math.abs(best.d - t))) best = x;
+    return best;
+  };
+  function drawAnalysis() {
+    if (!stations.length) return;
+    const names = new Map(), regOf = new Map();
+    for (const s of stations) if (s.depCode) { names.set(s.depCode, s.dep); regOf.set(s.depCode, s.reg); }
+    // relevé du dernier créneau (le relevé officiel le plus proche, à 1 h 30 près) et celui de la veille
+    const cr = dernierCreneau();
+    const cur = cr && cr.pt;
+    const ref = cur && nearest(cur.d - 24 * 36e5, 3 * 36e5);
+    const deps = new Map(), regs = new Map();
+    const add = (code, all, k) => {
+      if (!all) return;
+      deps.set(code, {name: names.get(code) || code, all, k});
+      const rn = regOf.get(code);
+      if (rn && rn !== "Non renseignée") { const r = regs.get(rn) || {name:rn, all:0, k:0}; r.all += all; r.k += k; regs.set(rn, r); }
+    };
+    if (cur) for (const [code, v] of Object.entries(cur.deps)) add(code, v[0], v[1] + v[2]);
+    else {                                   // pas encore de relevé pour ce créneau : données en direct
+      const tmp = new Map();
+      for (const s of stations) if (s.depCode) { const d = tmp.get(s.depCode) || [0, 0]; d[0]++; if (s.status !== "o") d[1]++; tmp.set(s.depCode, d); }
+      for (const [code, d] of tmp) add(code, d[0], d[1]);
+    }
+    // relevé précédent (~3 h avant) pour savoir si la hausse se poursuit à ce moment de la journée
+    const base = cur ? cur.d : Date.now();
+    const prev = nearest(base - 3 * 36e5, 90 * 6e4);
+    const pctOld = (pt, code) => { const o = pt && pt.deps[code]; return o && o[0] ? (o[1] + o[2]) / o[0] * 100 : null; };
+    // On ne cite que les départements assez peuplés (≥ 400 000 hab.) : dans les petits départements
+    // (Territoire de Belfort, Vosges…), quelques stations suffisent à faire bondir le pourcentage.
+    const list = [...deps.entries()].filter(([code, d]) => d.all >= 15 && (DEP_POP[code] || 0) >= 400).map(([code, d]) => {
+      const pct = d.k / d.all * 100, w24 = pctOld(ref, code), w3 = pctOld(prev, code);
+      return {code, name:d.name, pct, delta: w24 == null ? null : pct - w24, suite: w3 == null ? null : pct - w3};
+    });
+    const pc = v => pf.format(v) + " %";
+    const joinFr = a => a.length > 1 ? a.slice(0, -1).join(", ") + " et " + a[a.length - 1] : a[0];
+    const moment = cr ? cr.moment : "en ce moment";
+    const passe = /^hier/.test(moment);
+    const parts = [];
+    const hausses = list.filter(x => x.delta != null && x.delta >= 3 && x.pct >= 8).sort((a, b) => b.delta - a.delta).slice(0, 3);
+    if (hausses.length) parts.push(`<b>Forte hausse sur 24 h</b> : ` +
+      joinFr(hausses.map(x => `${esc(x.name)} (<span class="up">+${pf.format(x.delta)} pts</span>, ${pc(x.pct)})`)) + ".");
+    const top = list.filter(x => x.pct >= 10 && !hausses.includes(x)).sort((a, b) => b.pct - a.pct).slice(0, 3);
+    if (top.length) {
+      const enHausse = top.filter(x => x.suite != null && x.suite > 0.3);
+      let t = `<b>${hausses.length ? "Autres départements" : "Départements"} les plus touchés</b> : ` +
+        joinFr(top.map(x => `${esc(x.name)} (${pc(x.pct)})`));
+      const verbe = passe ? "s'est poursuivie" : "se poursuit";
+      if (enHausse.length === top.length) t += `, où la hausse ${verbe} ${moment}`;
+      else if (enHausse.length) t += `. La hausse ${verbe} ${moment} pour ${joinFr(enHausse.map(x => esc(x.name)))}`;
+      parts.push(t + ".");
+    }
+    const reg = [...regs.values()].filter(r => r.all >= 50).map(r => ({name:r.name, pct:r.k / r.all * 100})).sort((a, b) => b.pct - a.pct)[0];
+    if (reg && reg.pct >= 8) {
+      const part = reg.pct >= 55 ? "plus d'une station sur 2" : `1 station sur ${Math.max(2, Math.round(100 / reg.pct))}`;
+      parts.push(`<b>Région la plus touchée</b> : ${esc(reg.name)}, où ${part} fait face à des difficultés d'approvisionnement.`);
+    }
+    if (!parts.length) parts.push("Pas de zone en tension particulière : aucun grand département ne dépasse 10 % de stations en difficulté.");
+    $("#an-lbl").textContent = cr ? `Analyse · ${cr.moment} (${cr.heure})` : "Analyse · en direct";
+    $("#an-txt").innerHTML = parts.join(" ");
+    $("#analyse").hidden = false;
+  }
+
+  function drawH3() {
+    const box = $("#h3");
+    document.querySelectorAll("#h3-range button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.h === h3Range));
+    $("#h3-title").textContent = `% de stations en difficulté — ${h3Range / 24} derniers jours · ${scopeName()}`;
+    const nowV = liveValue(), nowPct = pctOf(nowV);
+    const tile = (lbl, h) => {
+      const x = h3At(h), p = x && pctOf(x.v);
+      return `<div class="stat"><div class="l">${lbl}</div><div class="v">${fmtPts(p != null ? nowPct - p : null)}</div>` +
+        `<div class="d">${p != null ? `${pf.format(p)} % le ${fmtDate(x.d)}` : "pas encore de relevé"}</div></div>`;
+    };
+    $("#h3-stats").innerHTML =
+      `<div class="stat"><div class="l">En difficulté maintenant</div><div class="v">${nowPct != null ? pf.format(nowPct) : "–"} %</div><div class="d">${nf.format(nowV.p + nowV.t)} stations sur ${nf.format(nowV.all)}</div></div>` +
+      tile("vs il y a 72 h", 72) + tile("vs il y a 7 jours", 168) + tile("vs il y a 30 jours", 720);
+
+    const t1 = Date.now(), t0 = t1 - h3Range * 36e5;
+    const pts = releves3h.filter(x => x.d >= t0 - 36e5 && x.d < t1 - 30 * 6e4)
+      .map(x => ({d: x.d, v: histValue(x)})).filter(x => x.v && x.v.all);
+    pts.push({d: new Date(t1), v: nowV, live: true});
+    pts.forEach(x => x.pct = pctOf(x.v));
+    if (pts.length < 2) {
+      box.innerHTML = `<div class="empty">Les relevés toutes les 3 heures démarrent dès la mise en ligne : la courbe apparaîtra après le premier relevé.<br>(Fichier <code>releves-3h.json</code> ${releves3h.length ? `: ${releves3h.length} relevé(s)` : "introuvable"}.)</div>`;
+      return;
+    }
+    const W = Math.max(300, box.clientWidth || 700), H = W < 480 ? 220 : 260;
+    const m = {l:44, r: W < 480 ? 14 : 60, t:12, b:26};
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const vals = pts.map(x => x.pct);
+    let lo = Math.max(0, Math.floor(Math.min(...vals) - 2)), hi = Math.ceil(Math.max(...vals) + 2);
+    const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw, .1))));
+    const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(v => v >= raw);
+    lo = Math.max(0, Math.floor(lo / step) * step); hi = Math.ceil(hi / step) * step;
+    const x = d => m.l + iw * (d - t0) / (t1 - t0), y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+    for (let v = lo; v <= hi + 1e-9; v += step)
+      svg += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${nf.format(v)} %</text>`;
+    // seuils de couleur de la carte
+    LEVELS.forEach((t, i) => {
+      if (t <= lo || t >= hi) return;
+      svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(${LEVEL_VARS[i + 1]})" stroke-width="1.5" stroke-dasharray="5 4"/>` +
+        (W >= 480 ? `<text class="axis" x="${W - m.r + 4}" y="${y(t) + 4}" fill="var(--muted)">${t} %</text>` : "");
+    });
+    // graduations horaires
+    const stepH = h3Range <= 168 ? 24 : h3Range <= 336 ? 48 : 120;
+    const first = new Date(t0); first.setMinutes(0, 0, 0); first.setHours(Math.ceil(first.getHours() / stepH) * stepH);
+    for (let d = first; d <= t1; d = new Date(d.getTime() + stepH * 36e5)) {
+      const lbl = d.toLocaleDateString("fr-FR", stepH === 24 ? {weekday:"short", day:"numeric"} : {day:"numeric", month:"short"});
+      svg += `<line class="grid" x1="${x(d)}" x2="${x(d)}" y1="${m.t}" y2="${m.t + ih}" style="opacity:.5"/><text class="axis" x="${x(d)}" y="${H - 7}" text-anchor="middle">${lbl}</text>`;
+    }
+    // courbe (coupée s'il manque plus de 6 h de relevés)
+    let dpath = "", prev = null;
+    for (const p of pts) {
+      dpath += `${prev && p.d - prev.d <= 6 * 36e5 ? "L" : "M"}${x(p.d).toFixed(1)},${y(p.pct).toFixed(1)}`; prev = p;
+    }
+    svg += `<path class="line" d="${dpath}" stroke="var(--accent)" style="stroke-width:2.5"/>`;
+    if (h3Range <= 168) pts.forEach(p => svg += `<circle class="mk" cx="${x(p.d)}" cy="${y(p.pct)}" r="${p.live ? 4.5 : 2.5}" fill="var(--accent)"/>`);
+    else svg += `<circle class="mk" cx="${x(pts[pts.length - 1].d)}" cy="${y(pts[pts.length - 1].pct)}" r="4.5" fill="var(--accent)"/>`;
+    const last = pts[pts.length - 1];
+    if (W >= 480) svg += `<text class="lbl" x="${x(last.d) + 8}" y="${y(last.pct) - 8}" fill="var(--text)" text-anchor="end">${pf.format(last.pct)} %</text>`;
+    svg += `<g id="h3-hover"></g>`;
+    pts.forEach((p, i) => {
+      const xa = i ? (x(pts[i - 1].d) + x(p.d)) / 2 : m.l, xb = i < pts.length - 1 ? (x(p.d) + x(pts[i + 1].d)) / 2 : W - m.r;
+      svg += `<rect class="hit" data-i="${i}" x="${xa}" y="${m.t}" width="${Math.max(1, xb - xa)}" height="${ih}"/>`;
+    });
+    svg += `</svg>`;
+    box.innerHTML = svg;
+    box.setAttribute("aria-label", "Part des stations en difficulté : " + pts.map(p => `${fmtDate(p.d)} ${pf.format(p.pct)} %`).join(" ; "));
+    const hov = box.querySelector("#h3-hover");
+    box.addEventListener("hoverindex", e => {
+      const p = pts[e.detail];
+      hov.innerHTML = !p ? "" : `<line class="xh" x1="${x(p.d)}" x2="${x(p.d)}" y1="${m.t}" y2="${m.t + ih}"/><circle class="mk" cx="${x(p.d)}" cy="${y(p.pct)}" r="5.5" fill="var(--accent)"/>`;
+    });
+    bindTip(box, $("#h3-tip"), i => {
+      const p = pts[i];
+      return `<div style="font-weight:600;margin-bottom:3px">${p.d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"})} · ${p.d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"})}${p.live ? " (en direct)" : ""}</div>` +
+        `<div class="r">En difficulté<b>${pf.format(p.pct)} %</b></div>` +
+        `<div class="r"><i class="sw p"></i>Partielle<b>${nf.format(p.v.p)}</b></div><div class="r"><i class="sw t"></i>Totale<b>${nf.format(p.v.t)}</b></div>`;
+    });
+  }
+  $("#h3-range").addEventListener("click", e => {
+    const b = e.target.closest("[data-h]"); if (!b) return;
+    h3Range = +b.dataset.h; drawH3();
+  });
+
+  // ---------- Onglet nouvelles ruptures ----------
+  // Nouvelles ruptures déclarées un jour donné (historique), pour le périmètre courant
+  function histNew(day, sc = scope) {
+    const n = day && day.new;
+    if (!n) return null;
+    if (!sc) return {p:n.p, t:n.t};
+    if (!n.deps) return null;
+    const codes = sc.type === "dep" ? [sc.code] : [...new Set(stations.filter(s => s.reg === sc.key).map(s => s.depCode))];
+    let p = 0, t = 0;
+    for (const c of codes) { const v = n.deps[c]; if (v) { p += v[0]; t += v[1]; } }
+    return {p, t};
+  }
+  function drawNew() {
+    const box = $("#new"), list = stations.filter(s => s.status !== "o" && inScope(s) && (scope || !selRegion() || s.reg === selRegion()));
+    const byDate = Object.fromEntries(history.map(h => [h.date, h]));
+    const days = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = dayStart(-i), key = isoDay(d), h = i === 0 ? null : histNew(byDate[key]);
+      days.push({d, key, p: h ? h.p : 0, t: h ? h.t : 0, src: i === 0 ? "live" : h ? "decl" : "est"});
+    }
+    // aujourd'hui (et jours sans déclarations enregistrées) : ruptures en cours ayant commencé ce jour-là
+    const idx = Object.fromEntries(days.map((x, i) => [x.key, i]));
+    for (const s of list) {
+      if (!s.since) continue;
+      const i = idx[isoDay(s.since)];
+      if (i === undefined || days[i].src === "decl") continue;
+      s.status === "t" ? days[i].t++ : days[i].p++;
+    }
+    const nEst = days.slice(0, 13).filter(x => x.src === "est").length;
+    const prev = days.slice(0, 7), cur = days.slice(7);
+    const sum = (a, k) => a.reduce((n, x) => n + (k ? x[k] : x.p + x.t), 0);
+    const nCur = sum(cur), nPrev = sum(prev);
+    $("#new-title").textContent = `Nouvelles stations en rupture — 7 derniers jours · ${scopeName()}`;
+    const trend = nCur > nPrev ? `<b class="up">en hausse</b>` : nCur < nPrev ? `<b class="down">en baisse</b>` : `<b>stable</b>`;
+    const vv = varPct(nCur, nPrev);
+    $("#new-sum").innerHTML = `<b>${nf.format(nCur)}</b> stations entrées en rupture sur les 7 derniers jours ` +
+      `(${nf.format(sum(cur, "p"))} en rupture partielle, ${nf.format(sum(cur, "t"))} passées à sec), contre <b>${nf.format(nPrev)}</b> les 7 jours d'avant : ${trend}` +
+      (vv != null ? ` (${fmtVar(vv)})` : "") + "." +
+      (nEst ? ` <span style="font-size:12.5px">(${nEst} jour(s) estimé(s) faute de déclarations enregistrées : relancez le rattrapage.)</span>` : "");
+
+    const W = Math.max(300, box.clientWidth || 600), H = 230;
+    const m = {l:34, r:6, t:18, b:26};
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const {top, nice} = niceScale(Math.max(...cur.map(x => Math.max(x.p, x.t))));
+    const y = v => m.t + ih - v / top * ih;
+    const gw = iw / 7, bw = Math.min(28, (gw - 14) / 2), gap = 2;
+    const narrow = W < 480;
+    const bar = (x0, v, cls) => {
+      if (!v) return "";
+      const yy = y(v), h = m.t + ih - yy, r = Math.min(4, h);
+      return `<path class="${cls}" d="M${x0},${yy + h} V${yy + r} Q${x0},${yy} ${x0 + r},${yy} H${x0 + bw - r} Q${x0 + bw},${yy} ${x0 + bw},${yy + r} V${yy + h} Z"/>`;
+    };
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+    for (let v = 0; v <= top; v += nice)
+      svg += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${nf.format(v)}</text>`;
+    cur.forEach((dd, i) => {
+      const cx = m.l + gw * i + gw / 2, x1 = cx - bw - gap / 2, x2 = cx + gap / 2;
+      const lbl = i === 6 ? "Auj." : dd.d.toLocaleDateString("fr-FR", narrow ? {day:"2-digit", month:"2-digit"} : {weekday:"short", day:"numeric"});
+      svg += `<rect class="hit" data-i="${i}" x="${m.l + gw * i}" y="${m.t}" width="${gw}" height="${ih}" rx="6"/>`;
+      const op = dd.src === "decl" ? "" : ' style="opacity:.5"';
+      svg += bar(x1, dd.p, "bp").replace("<path", `<path${op}`) + bar(x2, dd.t, "bt").replace("<path", `<path${op}`);
+      if (dd.p) svg += `<text class="val" x="${x1 + bw / 2}" y="${y(dd.p) - 4}" text-anchor="middle">${dd.p}</text>`;
+      if (dd.t) svg += `<text class="val" x="${x2 + bw / 2}" y="${y(dd.t) - 4}" text-anchor="middle">${dd.t}</text>`;
+      svg += `<text class="axis" x="${cx}" y="${H - 8}" text-anchor="middle"${i === 6 ? ' font-weight="600"' : ""}>${lbl}</text>`;
+    });
+    svg += `<line x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--muted)" stroke-width="1"/></svg>`;
+    box.innerHTML = svg;
+    box.setAttribute("aria-label", "Nouvelles stations en rupture par jour : " +
+      cur.map(x => `${x.d.toLocaleDateString("fr-FR")} ${x.p} partielles, ${x.t} totales`).join(" ; "));
+    bindTip(box, $("#new-tip"), i => {
+      const dd = cur[i], pv = prev[i];
+      const note = dd.src === "live" ? " (en cours, provisoire)" : dd.src === "est" ? " (estimation)" : "";
+      return tipRows(dd.d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"}) + note, dd.p, dd.t) +
+        `<div class="r" style="color:var(--muted);margin-top:3px">Même jour, semaine d'avant<b style="color:var(--text)">${nf.format(pv.p + pv.t)}</b></div>`;
+    });
+  }
+
+  // ---------- Onglet prix moyen ----------
+  let priceRange = 90;
+  const priceSel = new Set(["gazole", "e10", "sp98"]);
+  let liveCache = null;
+  function livePrices() {
+    if (liveCache) return liveCache;
+    const acc = {};
+    for (const s of stations) for (const k in s.px) { const a = acc[k] || (acc[k] = [0, 0]); a[0] += s.px[k]; a[1]++; }
+    liveCache = {};
+    for (const k in acc) if (acc[k][1] >= 20) liveCache[k] = acc[k][0] / acc[k][1];
+    return liveCache;
+  }
+  const histPrice = (off, k) => { const h = histAt(off); return h && h.prix && h.prix[k] != null ? h.prix[k] : null; };
+  const fmtCents = (now, then) => {
+    if (now == null || then == null) return `<span>n.d.</span>`;
+    const dc = (now - then) * 100, cls = dc > 0.05 ? "up" : dc < -0.05 ? "down" : "";
+    return `<span class="${cls}">${dc > 0 ? "+" : ""}${pf.format(dc)} c (${dc > 0 ? "+" : ""}${pf.format((now - then) / then * 100)} %)</span>`;
+  };
+  function drawPrice() {
+    const live = livePrices();
+    $("#price-tiles").innerHTML = FUELS.map(f => {
+      const now = live[f.k];
+      return `<div class="ptile"><div class="l"><i class="fsw" style="background:var(--f-${f.k})"></i>${f.label}</div>
+        <div class="v">${now ? pf3(now) : "–"} <small>€/L</small></div>
+        <div class="d"><span>J-7 : ${fmtCents(now, histPrice(7, f.k))}</span><span>J-30 : ${fmtCents(now, histPrice(30, f.k))}</span></div></div>`;
+    }).join("");
+    $("#prix-chips").innerHTML = FUELS.map(f =>
+      `<button type="button" class="pchip" data-k="${f.k}" aria-pressed="${priceSel.has(f.k)}"><i class="fsw" style="background:var(--f-${f.k})"></i>${f.label}</button>`).join("");
+    document.querySelectorAll("#prix-range button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.r === priceRange));
+
+    const box = $("#prix");
+    const byDate = Object.fromEntries(history.map(h => [h.date, h]));
+    const N = priceRange, days = [];
+    for (let i = N - 1; i >= 0; i--) {
+      const d = dayStart(-i), h = byDate[isoDay(d)];
+      days.push({d, live: i === 0, v: i === 0 ? live : (h && h.prix) || null});
+    }
+    const keys = FUELS.map(f => f.k).filter(k => priceSel.has(k));
+    const vals = days.flatMap(x => x.v ? keys.map(k => x.v[k]).filter(v => v != null) : []);
+    const nHist = days.filter(x => !x.live && x.v).length;
+    $("#prix-title").textContent = `Prix moyen en France — ${N === 365 ? "12 derniers mois" : N + " derniers jours"}`;
+    if (!keys.length) { box.innerHTML = `<div class="empty">Sélectionnez au moins un carburant.</div>`; return; }
+    if (nHist < 1 || !vals.length) {
+      box.innerHTML = `<div class="empty">L'historique des prix n'est pas encore disponible : lancez le rattrapage (voir README) ou attendez les premiers relevés quotidiens.</div>`;
+      return;
+    }
+    const W = Math.max(300, box.clientWidth || 700), H = W < 480 ? 240 : 300;
+    const m = {l:46, r: W < 480 ? 12 : 92, t:12, b:26};
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    const pad = Math.max(0.02, (hi - lo) * 0.08); lo -= pad; hi += pad;
+    const raw = (hi - lo) / 4, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(v => v >= raw);
+    lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+    const x = i => m.l + iw * i / (N - 1), y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+    const f2 = new Intl.NumberFormat("fr-FR", {minimumFractionDigits:2, maximumFractionDigits:2});
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+    for (let v = lo; v <= hi + 1e-9; v += step)
+      svg += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${f2.format(v)} €</text>`;
+    const nt = W < 480 ? 4 : 6;
+    for (let t = 0; t < nt; t++) {
+      const i = Math.round((N - 1) * t / (nt - 1));
+      const lbl = i === N - 1 ? "Auj." : days[i].d.toLocaleDateString("fr-FR", N > 120 ? {month:"short", year:"2-digit"} : {day:"numeric", month:"short"});
+      svg += `<text class="axis" x="${x(i)}" y="${H - 7}" text-anchor="${t === 0 ? "start" : t === nt - 1 ? "end" : "middle"}"${i === N - 1 ? ' font-weight="600"' : ""}>${lbl}</text>`;
+    }
+    const ends = [];
+    for (const k of keys) {
+      let d = "", pen = false, last = null;
+      days.forEach((dd, i) => {
+        const v = dd.v && dd.v[k];
+        if (v == null) { pen = false; return; }
+        d += `${pen ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`; pen = true; last = {i, v};
+      });
+      svg += `<path class="pl" d="${d}" stroke="var(--f-${k})"/>`;
+      if (last) { svg += `<circle class="mk" cx="${x(last.i)}" cy="${y(last.v)}" r="3.5" fill="var(--f-${k})"/>`; ends.push({k, v:last.v, yy:y(last.v)}); }
+    }
+    if (W >= 480) {                                 // étiquettes directes, sans chevauchement
+      ends.sort((a, b) => a.yy - b.yy);
+      for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 14) ends[i].yy = ends[i - 1].yy + 14;
+      for (const e of ends) svg += `<text class="lbl" x="${x(N - 1) + 8}" y="${e.yy + 4}" fill="var(--text)">${pf3(e.v)} <tspan fill="var(--muted)" font-weight="400">${FUEL_LABEL[e.k]}</tspan></text>`;
+    }
+    svg += `<g id="prix-hover"></g>`;
+    days.forEach((dd, i) => svg += `<rect class="hit" data-i="${i}" x="${x(i) - iw / (N - 1) / 2}" y="${m.t}" width="${iw / (N - 1)}" height="${ih}"/>`);
+    svg += `</svg>`;
+    box.innerHTML = svg;
+    box.setAttribute("aria-label", `Prix moyen par carburant sur ${N} jours`);
+    const hov = box.querySelector("#prix-hover");
+    box.addEventListener("hoverindex", e => {
+      const i = e.detail, dd = days[i];
+      hov.innerHTML = (i < 0 || !dd || !dd.v) ? "" : `<line class="xh" x1="${x(i)}" x2="${x(i)}" y1="${m.t}" y2="${m.t + ih}"/>` +
+        keys.filter(k => dd.v[k] != null).map(k => `<circle class="mk" cx="${x(i)}" cy="${y(dd.v[k])}" r="4.5" fill="var(--f-${k})"/>`).join("");
+    });
+    bindTip(box, $("#prix-tip"), i => {
+      const dd = days[i];
+      const title = dd.d.toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"long", year:"numeric"}) + (dd.live ? " (en direct)" : "");
+      if (!dd.v) return `<div style="font-weight:600">${title}</div><div style="color:var(--muted)">Pas de relevé ce jour-là</div>`;
+      return `<div style="font-weight:600;margin-bottom:3px">${title}</div>` + keys.filter(k => dd.v[k] != null)
+        .sort((a, b) => dd.v[b] - dd.v[a])
+        .map(k => `<div class="r"><i class="fsw" style="background:var(--f-${k})"></i>${FUEL_LABEL[k]}<b>${pf3(dd.v[k])} €</b></div>`).join("");
+    });
+  }
+  $("#prix-chips").addEventListener("click", e => {
+    const b = e.target.closest("[data-k]"); if (!b) return;
+    priceSel.has(b.dataset.k) ? priceSel.delete(b.dataset.k) : priceSel.add(b.dataset.k);
+    drawPrice();
+  });
+  $("#prix-range").addEventListener("click", e => {
+    const b = e.target.closest("[data-r]"); if (!b) return;
+    priceRange = +b.dataset.r; drawPrice();
+  });
+
+  // ---------- Périmètre ----------
+  function drawScope() {
+    $("#scope").innerHTML = `Périmètre : <b>${esc(scopeName())}</b>` +
+      (fuelFilter !== "all" ? ` · carburant : <b>${FUEL_LABEL[fuelFilter]}</b>` : "") +
+      (scope ? ` <button class="x" type="button" id="scope-x">✕ Revenir à la France entière</button>` : "");
+    const x = $("#scope-x");
+    if (x) x.addEventListener("click", () => { scope = null; map.setView([46.6, 2.4], innerWidth < 640 ? 5 : 6); redrawDetails(); });
+  }
+  function drawActiveChart() { if (activeTab === "evo") { drawEvo(); drawH3(); } else if (activeTab === "new") drawNew(); else if (activeTab === "prix") drawPrice(); }
+  function redrawDetails() { drawScope(); drawTerritories(); drawStations(); drawActiveChart(); }
+  function redraw() { drawMap(); drawTicker(); drawStatusBanner(); drawAnalysis(); redrawDetails(); }
+
+  // ---------- Interactions ----------
+  const chips = $("#fuels");
+  chips.innerHTML = [{k:"all", label:"Tous carburants"}, ...FUELS].map(f =>
+    `<button type="button" class="chip" data-f="${f.k}" aria-pressed="${f.k === "all"}">${f.label}</button>`).join("");
+  chips.addEventListener("click", e => {
+    const b = e.target.closest("[data-f]"); if (!b) return;
+    fuelFilter = b.dataset.f;
+    chips.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+    drawMap(); redrawDetails();
+  });
+  for (const st of ["p", "t", "o"]) {
+    $("#show-" + st).addEventListener("change", e => {
+      if (st === "o") { drawMap(); return; }
+      e.target.checked ? layers[st].addTo(map) : map.removeLayer(layers[st]);
+    });
+  }
+  $("#go-down").addEventListener("click", () => $("#details").scrollIntoView({behavior:"smooth"}));
+  // Bouton mode clair / mode sombre (choix mémorisé dans le navigateur du visiteur)
+  function paintThemeBtn() {
+    const d = dark();
+    $("#theme").innerHTML = d ? `☀️<span class="lb"> Mode clair</span>` : `🌙<span class="lb"> Mode sombre</span>`;
+    $("#theme").setAttribute("aria-label", d ? "Passer en mode clair" : "Passer en mode sombre");
+  }
+  $("#theme").addEventListener("click", () => {
+    const next = dark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+    baseTiles.setUrl(tileUrl("Base")); refTiles.setUrl(tileUrl("Reference"));
+    paintThemeBtn();
+    if (stations.length) redraw();       // recolore points, départements et graphiques
+  });
+  paintThemeBtn();
+
+  // Mobile : flèche pour replier / déplier la légende et les carburants
+  function setDock(closed) {
+    $("#dock").classList.toggle("closed", closed);
+    $("#leg-toggle").setAttribute("aria-expanded", !closed);
+    $("#leg-toggle .tg-lbl").textContent = closed ? "Légende" : "Masquer";
+    $("#leg-toggle .arr").textContent = closed ? "▴" : "▾";
+  }
+  $("#leg-toggle").addEventListener("click", () => setDock(!$("#dock").classList.contains("closed")));
+  setDock(matchMedia("(max-width:640px)").matches);   // sur téléphone, la légende est fermée à l'arrivée
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+    activeTab = t.id.replace("tab-", "");
+    document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+    document.querySelectorAll(".tabpanel").forEach(p => p.hidden = p.id !== "p-" + activeTab);
+    drawActiveChart();
+  }));
+  $("#terr-sel").addEventListener("change", () => { scope = null; redrawDetails(); });
+  $("#t-terr thead").addEventListener("click", e => {
+    const th = e.target.closest("th[data-k]"); if (!th) return;
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === "name" ? 1 : -1; }
+    drawTerritories();
+  });
+  $("#t-terr tbody").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-i]"); if (!tr) return;
+    const a = terrRows[+tr.dataset.i];
+    if (scope && scope.type === level && scope.key === a.key) { scope = null; map.setView([46.6, 2.4], innerWidth < 640 ? 5 : 6); }
+    else {
+      scope = {type:level, key:a.key, code:a.code};
+      map.fitBounds([[a.minLat, a.minLon], [a.maxLat, a.maxLon]], {padding:[30, 30], maxZoom:11});
+      scrollTo({top:0, behavior:"smooth"});
+    }
+    stLimit = 100;
+    redrawDetails();
+  });
+  $("#t-st thead").addEventListener("click", e => {
+    const th = e.target.closest("th[data-k]"); if (!th) return;
+    stSort = stSort.k === th.dataset.k ? {k:stSort.k, dir:-stSort.dir} : {k:th.dataset.k, dir: th.dataset.k === "since" ? -1 : 1};
+    drawStations();
+  });
+  $("#t-st tbody").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-id]"); if (!tr) return;
+    const s = stations.find(x => String(x.id) === tr.dataset.id); if (!s) return;
+    map.setView([s.lat, s.lon], 14);
+    L.popup().setLatLng([s.lat, s.lon]).setContent(popupHtml(s)).openOn(map);
+    scrollTo({top:0, behavior:"smooth"});
+  });
+  $("#st-more button").addEventListener("click", () => { stLimit += 200; drawStations(); });
+  $("#refresh").addEventListener("click", () => load());
+  let rsz;
+  addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(drawActiveChart, 150); });
+
+  // ---------- Chargement ----------
+  // Noms / enseignes des stations (enseignes.json, tiré d'OpenStreetMap par scripts/enseignes.py).
+  // Facultatif : sans ce fichier, les popups affichent simplement l'adresse comme avant.
+  let stationNames = {};
+  fetch("/enseignes.json").then(r => r.ok ? r.json() : {}).then(j => { stationNames = (j && j.stations) || {}; }).catch(() => {});
+
+  // Actualités (actu.json, généré par scripts/actu.py depuis Google Actualités) et tweets
+  // épinglés à la main (tweets.json : {"tweets":["https://x.com/…/status/…", …]}).
+  // Article « À la une » (une.json) : affiché en premier avec un bandeau rouge jusqu'à la date « jusqu_au ».
+  const uneP = fetch("/une.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null).then(u => {
+    if (!u || !u.link || !u.title) return null;
+    if (u.jusqu_au && new Date(u.jusqu_au) < new Date()) return null;      // périmé : on ne l'affiche plus
+    const a = $("#une");
+    a.href = u.link;
+    $("#une-title").textContent = u.title;
+    $("#une-meta").textContent = [u.source, u.date].filter(Boolean).join(" · ");
+    a.hidden = false;
+    return u.link;
+  });
+  Promise.all([fetch("/actu.json").then(r => r.ok ? r.json() : null), uneP]).then(([j, uneLink]) => {
+    // mêmes exclusions que scripts/actu.py : guides « où trouver de l'essence » et articles sur d'autres cartes
+    const EXCLUS = /\b(ou|comment) (trouver|faire le plein)|trouver (de l'?|du |des )?(essence|carburant|gazole|station)|\bcartes?\b|\bapplis?\b|\bapplications?\b|\bsites? (pour|qui)|quelles stations|liste des stations|stations? (encore )?(approvisionnee|ouverte|qui ont)|en temps reel/i;
+    const exclu = t => EXCLUS.test(String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/’/g, "'"));
+    const box = $("#actu-list"), arts = ((j && j.articles) || []).filter(a => a.link !== uneLink && !exclu(a.title));
+    if (!arts.length) { box.innerHTML = `<div class="actu-empty">Aucun article pour le moment.</div>`; return; }
+    box.innerHTML = arts.map(a => `
+      <a class="actu-item" href="${esc(a.link)}" target="_blank" rel="noopener">
+        <span class="a-title">${esc(a.title)}</span>
+        <span class="a-meta">${esc(a.source || "")}${a.date ? " · " + esc(a.date) : ""}</span>
+      </a>`).join("");
+  }).catch(() => { $("#actu-list").innerHTML = `<div class="actu-empty">Actualités indisponibles pour le moment.</div>`; });
+
+  fetch("/tweets.json").then(r => r.ok ? r.json() : null).then(j => {
+    const box = $("#tweets"), urls = (j && j.tweets) || [];
+    if (!urls.length) { box.innerHTML = `<div class="tw-empty">Pas de témoignage épinglé pour le moment.</div>`; return; }
+    box.innerHTML = urls.map(u => `<blockquote class="twitter-tweet" data-theme="${document.documentElement.dataset.theme === "dark" ? "dark" : "light"}"><a href="${esc(u)}"></a></blockquote>`).join("");
+    const s = document.createElement("script");
+    s.src = "https://platform.twitter.com/widgets.js"; s.async = true;
+    document.body.appendChild(s);
+  }).catch(() => {});
+  let releves3h = [];                       // [{ts, all, p, t, deps}]
+  async function loadH3() {
+    try {
+      const r = await fetch(H3_URL, {cache:"no-store"});
+      if (!r.ok) throw 0;
+      const j = await r.json();
+      releves3h = (j.points || []).map(x => ({...x, d: new Date(x.ts)})).filter(x => !isNaN(x.d)).sort((a, b) => a.d - b.d);
+    } catch { releves3h = []; }
+  }
+  async function loadHistory() {
+    try {
+      const r = await fetch(HISTORY_URL, {cache:"no-store"});
+      if (!r.ok) throw 0;
+      const j = await r.json();
+      history = (Array.isArray(j) ? j : j.days || []).filter(d => d && d.date).sort((a, b) => a.date.localeCompare(b.date));
+    } catch { history = []; }
+  }
+  async function load() {
+    const ov = $("#overlay");
+    if (!stations.length) ov.hidden = false;
+    $("#refresh").disabled = true;
+    try {
+      const [res] = await Promise.all([fetch(API, {cache:"no-store"}), loadHistory(), loadH3()]);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const raw = await res.json();
+      const rows = Array.isArray(raw) ? raw : (raw.results || []);
+      const hasRuptureFields = rows.some(r => Object.keys(r).some(k => k.includes("rupture")));
+      const now = Date.now();
+      stations = rows.map(r => parseStation(r, hasRuptureFields, now)).filter(Boolean);
+      liveCache = null;
+      const regs = [...new Set(stations.map(s => s.reg).filter(r => r !== "Non renseignée"))].sort((a, b) => a.localeCompare(b, "fr"));
+      const deps = [...new Set(stations.map(s => s.depLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+      const cur = $("#terr-sel").value;
+      $("#og-reg").innerHTML = regs.map(r => `<option value="reg:${esc(r)}">${esc(r)}</option>`).join("");
+      $("#og-dep").innerHTML = deps.map(d => `<option value="dep:${esc(d)}">${esc(d)}</option>`).join("");
+      if ([...$("#terr-sel").options].some(o => o.value === cur)) $("#terr-sel").value = cur;
+      $("#updated").innerHTML = `Mis à jour le ${fmtDate(new Date())}<span class="auto"> · auto toutes les ${REFRESH_MIN} min</span>`;
+      redraw();
+      // Pages /departement/… : centre la carte et filtre les tableaux sur ce département, une seule fois.
+      if (window.SCOPE_DEP && !depScopeDone) {
+        depScopeDone = true;
+        const st = stations.find(s => s.depCode === window.SCOPE_DEP);
+        if (st) showDepStations(window.SCOPE_DEP, st.depLabel);
+      }
+      ov.hidden = true;
+    } catch (err) {
+      console.error(err);
+      if (!stations.length) {
+        ov.hidden = false;
+        ov.innerHTML = `<div>Impossible de charger les données officielles (${esc(err.message)}).<br><br><button class="btn" type="button" onclick="location.reload()">Réessayer</button></div>`;
+      }
+      $("#updated").textContent = "Échec de l'actualisation — nouvelle tentative bientôt";
+    } finally {
+      $("#refresh").disabled = false;
+    }
+  }
+  load();
+  setInterval(load, REFRESH_MIN * 60 * 1000);
+})();
+</script>
+</body>
+</html>
