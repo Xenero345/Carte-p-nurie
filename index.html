@@ -1093,23 +1093,51 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   }
 
   // ---------- Analyse automatique : zones les plus touchées et plus fortes hausses sur 24 h ----------
+  // Créneaux d'analyse (heure de Paris) : le texte ne change qu'à ces heures-là, pour tout le monde.
+  // On retient le relevé officiel du matin (7-9 h), du midi (13-15 h) et du soir (19-21 h) : un seul relevé
+  // tombe dans chaque fenêtre, été comme hiver, donc le texte change 3 fois par jour et reste figé entre-temps.
+  const paris = d => { const g = {}; for (const x of parisParts.formatToParts(d)) g[x.type] = +x.value; return g; };
+  const FENETRES = [[7, 9, "ce matin"], [13, 15, "ce midi"], [19, 21, "ce soir"]];
+  function dernierCreneau() {
+    const now = Date.now();
+    for (let i = releves3h.length - 1; i >= 0; i--) {
+      const x = releves3h[i];
+      if (!x.deps || x.d > now) continue;
+      if (now - x.d > 14 * 36e5) return null;                 // relevés arrêtés : on passe en direct
+      const g = paris(x.d), f = FENETRES.find(([a, b]) => g.hour >= a && g.hour <= b);
+      if (!f) continue;
+      const today = paris(new Date(now));
+      const moment = g.day === today.day ? f[2] : (f[2] === "ce soir" ? "hier soir" : "hier");
+      return {pt: x, moment, heure: `${g.hour} h ${String(g.minute).padStart(2, "0")}`};
+    }
+    return null;
+  }
+  const nearest = (t, tol) => {
+    let best = null;
+    for (const x of releves3h) if (x.deps && Math.abs(x.d - t) <= tol && (!best || Math.abs(x.d - t) < Math.abs(best.d - t))) best = x;
+    return best;
+  };
   function drawAnalysis() {
     if (!stations.length) return;
+    const names = new Map(), regOf = new Map();
+    for (const s of stations) if (s.depCode) { names.set(s.depCode, s.dep); regOf.set(s.depCode, s.reg); }
+    // relevé du dernier créneau (le relevé officiel le plus proche, à 1 h 30 près) et celui de la veille
+    const cr = dernierCreneau();
+    const cur = cr && cr.pt;
+    const ref = cur && nearest(cur.d - 24 * 36e5, 3 * 36e5);
     const deps = new Map(), regs = new Map();
-    for (const s of stations) {
-      if (s.depCode) {
-        const d = deps.get(s.depCode) || {name:s.dep, all:0, k:0};
-        d.all++; if (s.status !== "o") d.k++; deps.set(s.depCode, d);
-      }
-      if (s.reg !== "Non renseignée") {
-        const r = regs.get(s.reg) || {name:s.reg, all:0, k:0};
-        r.all++; if (s.status !== "o") r.k++; regs.set(s.reg, r);
-      }
+    const add = (code, all, k) => {
+      if (!all) return;
+      deps.set(code, {name: names.get(code) || code, all, k});
+      const rn = regOf.get(code);
+      if (rn && rn !== "Non renseignée") { const r = regs.get(rn) || {name:rn, all:0, k:0}; r.all += all; r.k += k; regs.set(rn, r); }
+    };
+    if (cur) for (const [code, v] of Object.entries(cur.deps)) add(code, v[0], v[1] + v[2]);
+    else {                                   // pas encore de relevé pour ce créneau : données en direct
+      const tmp = new Map();
+      for (const s of stations) if (s.depCode) { const d = tmp.get(s.depCode) || [0, 0]; d[0]++; if (s.status !== "o") d[1]++; tmp.set(s.depCode, d); }
+      for (const [code, d] of tmp) add(code, d[0], d[1]);
     }
-    // relevé d'il y a ~24 h (à ±3 h près) pour mesurer la hausse par département
-    const target = Date.now() - 24 * 36e5;
-    let ref = null;
-    for (const x of releves3h) if (x.deps && Math.abs(x.d - target) <= 3 * 36e5 && (!ref || Math.abs(x.d - target) < Math.abs(ref.d - target))) ref = x;
     const list = [...deps.entries()].filter(([, d]) => d.all >= 15).map(([code, d]) => {
       const pct = d.k / d.all * 100, old = ref && ref.deps[code];
       const was = old && old[0] ? (old[1] + old[2]) / old[0] * 100 : null;
@@ -1125,8 +1153,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     const reg = [...regs.values()].filter(r => r.all >= 50).map(r => ({name:r.name, pct:r.k / r.all * 100})).sort((a, b) => b.pct - a.pct)[0];
     if (reg && reg.pct >= 8) parts.push(`<b>Région la plus touchée</b> : ${lab(reg)}.`);
     if (!parts.length) parts.push("Pas de zone en tension particulière : aucun département ne dépasse 10 % de stations en difficulté.");
-    const h = +new Intl.DateTimeFormat("fr-FR", {hour:"numeric", hourCycle:"h23", timeZone:TZ}).format(new Date());
-    $("#an-lbl").textContent = h < 12 ? "Analyse · ce matin" : h < 18 ? "Analyse · cet après-midi" : "Analyse · ce soir";
+    $("#an-lbl").textContent = cr ? `Analyse · ${cr.moment} (${cr.heure})` : "Analyse · en direct";
     $("#an-txt").innerHTML = parts.join(" ");
     $("#analyse").hidden = false;
   }
@@ -1518,7 +1545,10 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     return u.link;
   });
   Promise.all([fetch("actu.json").then(r => r.ok ? r.json() : null), uneP]).then(([j, uneLink]) => {
-    const box = $("#actu-list"), arts = ((j && j.articles) || []).filter(a => a.link !== uneLink);
+    // mêmes exclusions que scripts/actu.py : guides « où trouver de l'essence » et articles sur d'autres cartes
+    const EXCLUS = /\b(ou|comment) (trouver|faire le plein)|trouver (de l'?|du |des )?(essence|carburant|gazole|station)|\bcartes?\b|\bapplis?\b|\bapplications?\b|\bsites? (pour|qui)|quelles stations|liste des stations|stations? (encore )?(approvisionnee|ouverte|qui ont)|en temps reel/i;
+    const exclu = t => EXCLUS.test(String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/’/g, "'"));
+    const box = $("#actu-list"), arts = ((j && j.articles) || []).filter(a => a.link !== uneLink && !exclu(a.title));
     if (!arts.length) { box.innerHTML = `<div class="actu-empty">Aucun article pour le moment.</div>`; return; }
     box.innerHTML = arts.map(a => `
       <a class="actu-item" href="${esc(a.link)}" target="_blank" rel="noopener">
