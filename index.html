@@ -210,10 +210,25 @@ a{color:var(--accent)}
 .status-banner .sb-dot{width:9px;height:9px;border-radius:50%;background:#fff;flex:none;opacity:.9}
 .status-banner .sb-text{display:flex;flex-wrap:wrap;column-gap:8px;row-gap:0;align-items:baseline;max-width:1200px}
 .status-banner .sb-trend{opacity:.85;font-size:13px}
+.status-banner .up,.status-banner .down{color:#fff;font-weight:700}
 @media (max-width:640px){.status-banner{padding:8px 12px;font-size:13px}.status-banner .sb-trend{font-size:12px}}
 
 /* ---------- Actu & réseaux sociaux ---------- */
 .actu{margin-top:30px}
+.une{display:flex;align-items:stretch;margin-bottom:14px;border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;border:2px solid var(--total);background:var(--surface)}
+.une[hidden]{display:none}
+.une-tag{flex:none;display:flex;align-items:center;padding:0 14px;background:var(--total);color:#fff;font-weight:800;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
+.une-body{padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.une-title{font-weight:700;font-size:16px}
+.une-meta{color:var(--muted);font-size:12.5px}
+.une:hover .une-title{text-decoration:underline}
+@media (max-width:640px){.une{flex-direction:column}.une-tag{padding:5px 12px}.une-title{font-size:15px}}
+/* Analyse de la situation */
+.analyse{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;font-size:14px}
+.analyse .an-in{max-width:1200px;margin:0 auto;display:flex;gap:8px;align-items:baseline}
+.analyse .an-lbl{flex:none;font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.analyse[hidden]{display:none}
+@media (max-width:640px){.analyse{padding:8px 12px;font-size:13px}.analyse .an-in{flex-direction:column;gap:2px}}
 .actu-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
 @media (max-width:760px){.actu-grid{grid-template-columns:1fr}}
 .actu-list{display:flex;flex-direction:column;gap:0}
@@ -389,6 +404,9 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   <span class="sb-dot" aria-hidden="true"></span>
   <span class="sb-text"><strong id="sb-title">Chargement de la situation…</strong><span class="sb-trend" id="sb-trend"></span></span>
 </div>
+<div class="analyse" id="analyse" hidden>
+  <div class="an-in"><span class="an-lbl" id="an-lbl">Analyse</span><span id="an-txt"></span></div>
+</div>
 
 <main class="wrap" id="details">
   <div class="scope" id="scope"></div>
@@ -500,6 +518,10 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   <!-- Actualités & réseaux sociaux -->
   <section class="actu" id="actu">
     <h2>Actualités sur la pénurie</h2>
+    <a class="une" id="une" href="#" target="_blank" rel="noopener" hidden>
+      <span class="une-tag">À la une</span>
+      <span class="une-body"><span class="une-title" id="une-title"></span><span class="une-meta" id="une-meta"></span></span>
+    </a>
     <div class="actu-grid">
       <div class="card"><div class="actu-list" id="actu-list"><div class="actu-empty">Chargement des actualités…</div></div></div>
       <div class="tweets" id="tweets"></div>
@@ -546,8 +568,30 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   const toList = v => Array.isArray(v) ? v : (typeof v === "string" && v.trim() ? v.split(/[;,|]/) : []);
   const fuelSet = v => new Set(toList(v).map(fuelKey).filter(Boolean));
   const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const fmtDate = d => d ? d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit"}) + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"}) : "";
-  const parseDate = v => { if (!v) return null; const d = new Date(v); return isNaN(d) ? null : d; };
+  // Heure française partout, changement d'heure (été / hiver) compris.
+  const TZ = "Europe/Paris";
+  const fmtDate = d => d ? d.toLocaleDateString("fr-FR", {day:"2-digit", month:"2-digit", timeZone:TZ}) + " " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit", timeZone:TZ}) : "";
+  const parisParts = new Intl.DateTimeFormat("en-US", {timeZone:TZ, hourCycle:"h23", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const offCache = new Map();
+  const parisOffset = ms => {           // écart (ms) entre l'heure de Paris et l'heure universelle à cet instant
+    const h = Math.floor(ms / 36e5);     // mis en cache par heure : ~10 000 stations à traiter
+    if (offCache.has(h)) return offCache.get(h);
+    const g = {}; for (const p of parisParts.formatToParts(new Date(h * 36e5))) g[p.type] = +p.value;
+    const off = Date.UTC(g.year, g.month - 1, g.day, g.hour, g.minute, g.second) - h * 36e5;
+    offCache.set(h, off);
+    return off;
+  };
+  // Le flux officiel donne l'heure affichée en station (heure de Paris) mais l'étiquette « +00:00 » :
+  // on lit donc l'heure telle quelle comme une heure de Paris.
+  const parseDate = v => {
+    if (!v) return null;
+    const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) { const d = new Date(v); return isNaN(d) ? null : d; }
+    const wall = Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0));
+    let t = wall - parisOffset(wall);
+    t = wall - parisOffset(t);          // 2e passage : exact autour du changement d'heure
+    return new Date(t);
+  };
   const normDep = c => { c = String(c ?? "").trim().toUpperCase(); return /^\d$/.test(c) ? "0" + c : c; };
   const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   const dayStart = (offset = 0) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + offset); return d; };
@@ -1048,6 +1092,45 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     $("#sb-trend").innerHTML = p24 != null ? fmtPts(pct - p24) + " <span style=\"opacity:.8\">sur 24 h</span>" : "";
   }
 
+  // ---------- Analyse automatique : zones les plus touchées et plus fortes hausses sur 24 h ----------
+  function drawAnalysis() {
+    if (!stations.length) return;
+    const deps = new Map(), regs = new Map();
+    for (const s of stations) {
+      if (s.depCode) {
+        const d = deps.get(s.depCode) || {name:s.dep, all:0, k:0};
+        d.all++; if (s.status !== "o") d.k++; deps.set(s.depCode, d);
+      }
+      if (s.reg !== "Non renseignée") {
+        const r = regs.get(s.reg) || {name:s.reg, all:0, k:0};
+        r.all++; if (s.status !== "o") r.k++; regs.set(s.reg, r);
+      }
+    }
+    // relevé d'il y a ~24 h (à ±3 h près) pour mesurer la hausse par département
+    const target = Date.now() - 24 * 36e5;
+    let ref = null;
+    for (const x of releves3h) if (x.deps && Math.abs(x.d - target) <= 3 * 36e5 && (!ref || Math.abs(x.d - target) < Math.abs(ref.d - target))) ref = x;
+    const list = [...deps.entries()].filter(([, d]) => d.all >= 15).map(([code, d]) => {
+      const pct = d.k / d.all * 100, old = ref && ref.deps[code];
+      const was = old && old[0] ? (old[1] + old[2]) / old[0] * 100 : null;
+      return {code, name:d.name, pct, delta: was == null ? null : pct - was};
+    });
+    const lab = x => `${esc(x.name)} (${pf.format(x.pct)} %)`;
+    const parts = [];
+    const hausses = list.filter(x => x.delta != null && x.delta >= 3 && x.pct >= 8).sort((a, b) => b.delta - a.delta).slice(0, 3);
+    if (hausses.length) parts.push(`<b>Forte hausse sur 24 h</b> : ` +
+      hausses.map(x => `${esc(x.name)} (<span class="up">+${pf.format(x.delta)} pts</span>, ${pf.format(x.pct)} %)`).join(", ") + ".");
+    const top = list.filter(x => x.pct >= 10 && !hausses.includes(x)).sort((a, b) => b.pct - a.pct).slice(0, 3);
+    if (top.length) parts.push(`<b>${hausses.length ? "Autres départements" : "Départements"} les plus touchés</b> : ${top.map(lab).join(", ")}.`);
+    const reg = [...regs.values()].filter(r => r.all >= 50).map(r => ({name:r.name, pct:r.k / r.all * 100})).sort((a, b) => b.pct - a.pct)[0];
+    if (reg && reg.pct >= 8) parts.push(`<b>Région la plus touchée</b> : ${lab(reg)}.`);
+    if (!parts.length) parts.push("Pas de zone en tension particulière : aucun département ne dépasse 10 % de stations en difficulté.");
+    const h = +new Intl.DateTimeFormat("fr-FR", {hour:"numeric", hourCycle:"h23", timeZone:TZ}).format(new Date());
+    $("#an-lbl").textContent = h < 12 ? "Analyse · ce matin" : h < 18 ? "Analyse · cet après-midi" : "Analyse · ce soir";
+    $("#an-txt").innerHTML = parts.join(" ");
+    $("#analyse").hidden = false;
+  }
+
   function drawH3() {
     const box = $("#h3");
     document.querySelectorAll("#h3-range button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.h === h3Range));
@@ -1329,7 +1412,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   }
   function drawActiveChart() { if (activeTab === "evo") { drawEvo(); drawH3(); } else if (activeTab === "new") drawNew(); else if (activeTab === "prix") drawPrice(); }
   function redrawDetails() { drawScope(); drawTerritories(); drawStations(); drawActiveChart(); }
-  function redraw() { drawMap(); drawTicker(); drawStatusBanner(); redrawDetails(); }
+  function redraw() { drawMap(); drawTicker(); drawStatusBanner(); drawAnalysis(); redrawDetails(); }
 
   // ---------- Interactions ----------
   const chips = $("#fuels");
@@ -1423,8 +1506,19 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
 
   // Actualités (actu.json, généré par scripts/actu.py depuis Google Actualités) et tweets
   // épinglés à la main (tweets.json : {"tweets":["https://x.com/…/status/…", …]}).
-  fetch("actu.json").then(r => r.ok ? r.json() : null).then(j => {
-    const box = $("#actu-list"), arts = (j && j.articles) || [];
+  // Article « À la une » (une.json) : affiché en premier avec un bandeau rouge jusqu'à la date « jusqu_au ».
+  const uneP = fetch("une.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null).then(u => {
+    if (!u || !u.link || !u.title) return null;
+    if (u.jusqu_au && new Date(u.jusqu_au) < new Date()) return null;      // périmé : on ne l'affiche plus
+    const a = $("#une");
+    a.href = u.link;
+    $("#une-title").textContent = u.title;
+    $("#une-meta").textContent = [u.source, u.date].filter(Boolean).join(" · ");
+    a.hidden = false;
+    return u.link;
+  });
+  Promise.all([fetch("actu.json").then(r => r.ok ? r.json() : null), uneP]).then(([j, uneLink]) => {
+    const box = $("#actu-list"), arts = ((j && j.articles) || []).filter(a => a.link !== uneLink);
     if (!arts.length) { box.innerHTML = `<div class="actu-empty">Aucun article pour le moment.</div>`; return; }
     box.innerHTML = arts.map(a => `
       <a class="actu-item" href="${esc(a.link)}" target="_blank" rel="noopener">
