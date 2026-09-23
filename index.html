@@ -62,7 +62,7 @@
     document.head.appendChild(s);
   }
 </script>
-<script src="departements.js" onerror="chargerDepartementsSecours()"></script>
+<script src="/departements.js" onerror="chargerDepartementsSecours()"></script>
 <style>
 :root{
   --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --text:#16181d; --muted:#5d6470;
@@ -248,6 +248,13 @@ a{color:var(--accent)}
 .actu-empty{padding:16px;color:var(--muted);font-size:14px}
 .tweets{display:flex;flex-direction:column;gap:12px}
 .tweets .tw-empty{color:var(--muted);font-size:13.5px;padding:2px}
+
+/* ---------- Bloc de texte des pages /departement/… ---------- */
+.dep-hero{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px}
+.dep-hero .dh-in{max-width:1200px;margin:0 auto;font-size:14.5px;color:var(--muted);line-height:1.5}
+.dep-hero .dh-in b{color:var(--text)}
+.dep-hero .dh-links{margin-top:6px;font-size:13.5px}
+.dep-hero .dh-links a{margin-right:10px}
 
 /* ---------- Détails / onglets ---------- */
 .wrap{max-width:1200px;margin:0 auto;padding:0 16px}
@@ -545,8 +552,11 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
 (() => {
   // ---------- Configuration ----------
   const API = "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/exports/json";
-  const HISTORY_URL = "historique.json";   // généré chaque jour par scripts/snapshot.py (GitHub Actions)
-  const H3_URL = "releves-3h.json";         // relevés toutes les 3 h (même script)
+  const HISTORY_URL = "/historique.json";   // généré chaque jour par scripts/snapshot.py (GitHub Actions)
+  const H3_URL = "/releves-3h.json";         // relevés toutes les 3 h (même script)
+  // Chemins racine (et non relatifs) : ces fichiers vivent à la racine du site, y compris
+  // quand la page elle-même est dans /departement/<slug>/ — un chemin relatif irait chercher
+  // au mauvais endroit depuis un sous-dossier.
   const REFRESH_MIN = 10;
   const MAX_AGE_DAYS = 60;          // au-delà, une « rupture temporaire » jamais clôturée est ignorée
   const PRICE_MAX_AGE_DAYS = 7;
@@ -667,6 +677,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   let level = "dep";
   let sortKey = "pct", sortDir = -1;
   let scope = null;                // {type:"dep"|"reg", key, code?}
+  let depScopeDone = false;        // pour les pages /departement/… : centre une seule fois, au premier chargement
   let stSort = {k:"status", dir:1};
   let stLimit = 100;
   let activeTab = "terr";
@@ -1566,12 +1577,12 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   // Noms / enseignes des stations (enseignes.json, tiré d'OpenStreetMap par scripts/enseignes.py).
   // Facultatif : sans ce fichier, les popups affichent simplement l'adresse comme avant.
   let stationNames = {};
-  fetch("enseignes.json").then(r => r.ok ? r.json() : {}).then(j => { stationNames = (j && j.stations) || {}; }).catch(() => {});
+  fetch("/enseignes.json").then(r => r.ok ? r.json() : {}).then(j => { stationNames = (j && j.stations) || {}; }).catch(() => {});
 
   // Actualités (actu.json, généré par scripts/actu.py depuis Google Actualités) et tweets
   // épinglés à la main (tweets.json : {"tweets":["https://x.com/…/status/…", …]}).
   // Article « À la une » (une.json) : affiché en premier avec un bandeau rouge jusqu'à la date « jusqu_au ».
-  const uneP = fetch("une.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null).then(u => {
+  const uneP = fetch("/une.json", {cache:"no-store"}).then(r => r.ok ? r.json() : null).catch(() => null).then(u => {
     if (!u || !u.link || !u.title) return null;
     if (u.jusqu_au && new Date(u.jusqu_au) < new Date()) return null;      // périmé : on ne l'affiche plus
     const a = $("#une");
@@ -1581,7 +1592,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
     a.hidden = false;
     return u.link;
   });
-  Promise.all([fetch("actu.json").then(r => r.ok ? r.json() : null), uneP]).then(([j, uneLink]) => {
+  Promise.all([fetch("/actu.json").then(r => r.ok ? r.json() : null), uneP]).then(([j, uneLink]) => {
     // mêmes exclusions que scripts/actu.py : guides « où trouver de l'essence » et articles sur d'autres cartes
     const EXCLUS = /\b(ou|comment) (trouver|faire le plein)|trouver (de l'?|du |des )?(essence|carburant|gazole|station)|\bcartes?\b|\bapplis?\b|\bapplications?\b|\bsites? (pour|qui)|quelles stations|liste des stations|stations? (encore )?(approvisionnee|ouverte|qui ont)|en temps reel/i;
     const exclu = t => EXCLUS.test(String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/’/g, "'"));
@@ -1594,7 +1605,7 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       </a>`).join("");
   }).catch(() => { $("#actu-list").innerHTML = `<div class="actu-empty">Actualités indisponibles pour le moment.</div>`; });
 
-  fetch("tweets.json").then(r => r.ok ? r.json() : null).then(j => {
+  fetch("/tweets.json").then(r => r.ok ? r.json() : null).then(j => {
     const box = $("#tweets"), urls = (j && j.tweets) || [];
     if (!urls.length) { box.innerHTML = `<div class="tw-empty">Pas de témoignage épinglé pour le moment.</div>`; return; }
     box.innerHTML = urls.map(u => `<blockquote class="twitter-tweet" data-theme="${document.documentElement.dataset.theme === "dark" ? "dark" : "light"}"><a href="${esc(u)}"></a></blockquote>`).join("");
@@ -1640,6 +1651,12 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       if ([...$("#terr-sel").options].some(o => o.value === cur)) $("#terr-sel").value = cur;
       $("#updated").innerHTML = `Mis à jour le ${fmtDate(new Date())}<span class="auto"> · auto toutes les ${REFRESH_MIN} min</span>`;
       redraw();
+      // Pages /departement/… : centre la carte et filtre les tableaux sur ce département, une seule fois.
+      if (window.SCOPE_DEP && !depScopeDone) {
+        depScopeDone = true;
+        const st = stations.find(s => s.depCode === window.SCOPE_DEP);
+        if (st) showDepStations(window.SCOPE_DEP, st.depLabel);
+      }
       ov.hidden = true;
     } catch (err) {
       console.error(err);
