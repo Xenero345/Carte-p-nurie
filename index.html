@@ -1093,6 +1093,16 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
   }
 
   // ---------- Analyse automatique : zones les plus touchées et plus fortes hausses sur 24 h ----------
+  // Population des départements (milliers d'habitants, ordre de grandeur INSEE)
+  const DEP_POP = {"01":660,"02":525,"03":335,"04":166,"05":141,"06":1100,"07":330,"08":270,"09":155,"10":310,"11":375,"12":280,
+    "13":2050,"14":700,"15":144,"16":350,"17":660,"18":300,"19":240,"2A":160,"2B":185,"21":535,"22":605,"23":116,"24":415,
+    "25":545,"26":520,"27":600,"28":430,"29":915,"30":750,"31":1430,"32":190,"33":1650,"34":1200,"35":1100,"36":218,"37":610,
+    "38":1280,"39":258,"40":420,"41":330,"42":765,"43":227,"44":1450,"45":680,"46":174,"47":330,"48":76,"49":820,"50":495,
+    "51":565,"52":172,"53":307,"54":730,"55":183,"56":760,"57":1045,"58":202,"59":2610,"60":830,"61":280,"62":1460,"63":660,
+    "64":690,"65":230,"66":480,"67":1150,"68":770,"69":1900,"70":235,"71":550,"72":565,"73":440,"74":830,"75":2130,"76":1250,
+    "77":1430,"78":1450,"79":375,"80":570,"81":390,"82":260,"83":1080,"84":560,"85":690,"86":440,"87":370,"88":360,"89":335,
+    "90":140,"91":1310,"92":1620,"93":1650,"94":1410,"95":1250,"971":385,"972":360,"973":290,"974":870,"976":310};
+
   // Créneaux d'analyse (heure de Paris) : le texte ne change qu'à ces heures-là, pour tout le monde.
   // On retient le relevé officiel du matin (7-9 h), du midi (13-15 h) et du soir (19-21 h) : un seul relevé
   // tombe dans chaque fenêtre, été comme hiver, donc le texte change 3 fois par jour et reste figé entre-temps.
@@ -1138,21 +1148,40 @@ footer{color:var(--muted);font-size:13px;padding:20px 0 40px;border-top:1px soli
       for (const s of stations) if (s.depCode) { const d = tmp.get(s.depCode) || [0, 0]; d[0]++; if (s.status !== "o") d[1]++; tmp.set(s.depCode, d); }
       for (const [code, d] of tmp) add(code, d[0], d[1]);
     }
-    const list = [...deps.entries()].filter(([, d]) => d.all >= 15).map(([code, d]) => {
-      const pct = d.k / d.all * 100, old = ref && ref.deps[code];
-      const was = old && old[0] ? (old[1] + old[2]) / old[0] * 100 : null;
-      return {code, name:d.name, pct, delta: was == null ? null : pct - was};
+    // relevé précédent (~3 h avant) pour savoir si la hausse se poursuit à ce moment de la journée
+    const base = cur ? cur.d : Date.now();
+    const prev = nearest(base - 3 * 36e5, 90 * 6e4);
+    const pctOld = (pt, code) => { const o = pt && pt.deps[code]; return o && o[0] ? (o[1] + o[2]) / o[0] * 100 : null; };
+    // On ne cite que les départements assez peuplés (≥ 400 000 hab.) : dans les petits départements
+    // (Territoire de Belfort, Vosges…), quelques stations suffisent à faire bondir le pourcentage.
+    const list = [...deps.entries()].filter(([code, d]) => d.all >= 15 && (DEP_POP[code] || 0) >= 400).map(([code, d]) => {
+      const pct = d.k / d.all * 100, w24 = pctOld(ref, code), w3 = pctOld(prev, code);
+      return {code, name:d.name, pct, delta: w24 == null ? null : pct - w24, suite: w3 == null ? null : pct - w3};
     });
-    const lab = x => `${esc(x.name)} (${pf.format(x.pct)} %)`;
+    const pc = v => pf.format(v) + " %";
+    const joinFr = a => a.length > 1 ? a.slice(0, -1).join(", ") + " et " + a[a.length - 1] : a[0];
+    const moment = cr ? cr.moment : "en ce moment";
+    const passe = /^hier/.test(moment);
     const parts = [];
     const hausses = list.filter(x => x.delta != null && x.delta >= 3 && x.pct >= 8).sort((a, b) => b.delta - a.delta).slice(0, 3);
     if (hausses.length) parts.push(`<b>Forte hausse sur 24 h</b> : ` +
-      hausses.map(x => `${esc(x.name)} (<span class="up">+${pf.format(x.delta)} pts</span>, ${pf.format(x.pct)} %)`).join(", ") + ".");
+      joinFr(hausses.map(x => `${esc(x.name)} (<span class="up">+${pf.format(x.delta)} pts</span>, ${pc(x.pct)})`)) + ".");
     const top = list.filter(x => x.pct >= 10 && !hausses.includes(x)).sort((a, b) => b.pct - a.pct).slice(0, 3);
-    if (top.length) parts.push(`<b>${hausses.length ? "Autres départements" : "Départements"} les plus touchés</b> : ${top.map(lab).join(", ")}.`);
+    if (top.length) {
+      const enHausse = top.filter(x => x.suite != null && x.suite > 0.3);
+      let t = `<b>${hausses.length ? "Autres départements" : "Départements"} les plus touchés</b> : ` +
+        joinFr(top.map(x => `${esc(x.name)} (${pc(x.pct)})`));
+      const verbe = passe ? "s'est poursuivie" : "se poursuit";
+      if (enHausse.length === top.length) t += `, où la hausse ${verbe} ${moment}`;
+      else if (enHausse.length) t += `. La hausse ${verbe} ${moment} pour ${joinFr(enHausse.map(x => esc(x.name)))}`;
+      parts.push(t + ".");
+    }
     const reg = [...regs.values()].filter(r => r.all >= 50).map(r => ({name:r.name, pct:r.k / r.all * 100})).sort((a, b) => b.pct - a.pct)[0];
-    if (reg && reg.pct >= 8) parts.push(`<b>Région la plus touchée</b> : ${lab(reg)}.`);
-    if (!parts.length) parts.push("Pas de zone en tension particulière : aucun département ne dépasse 10 % de stations en difficulté.");
+    if (reg && reg.pct >= 8) {
+      const part = reg.pct >= 55 ? "plus d'une station sur 2" : `1 station sur ${Math.max(2, Math.round(100 / reg.pct))}`;
+      parts.push(`<b>Région la plus touchée</b> : ${esc(reg.name)}, où ${part} fait face à des difficultés d'approvisionnement.`);
+    }
+    if (!parts.length) parts.push("Pas de zone en tension particulière : aucun grand département ne dépasse 10 % de stations en difficulté.");
     $("#an-lbl").textContent = cr ? `Analyse · ${cr.moment} (${cr.heure})` : "Analyse · en direct";
     $("#an-txt").innerHTML = parts.join(" ");
     $("#analyse").hidden = false;
