@@ -1,0 +1,29 @@
+name: Actualités (toutes les 3 h)
+
+on:
+  schedule:
+    - cron: "25 */3 * * *"    # décalé de 25 min par rapport au relevé, pour ne pas tout lancer en même temps
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Récupérer les actualités
+        run: python scripts/actu.py --out actu.json
+      - name: Enregistrer
+        run: |
+          git config user.name "releve-bot"
+          git config user.email "releve-bot@users.noreply.github.com"
+          git add actu.json
+          git diff --cached --quiet || git commit -m "Actualités pénurie carburant"
+          git pull --rebase --autostash || true
+          git push
