@@ -1,0 +1,40 @@
+name: Tweet quotidien
+
+# Publie deux fois par jour un point de situation sur X (heures de Paris, été) :
+#   ~8h20, juste après le relevé de 8h05
+#   ~18h30, avec le relevé de 17h05 (le soir, quand les gens font le plein)
+# Heures en UTC : tout recule d'une heure (7h20 / 17h30) après le passage à l'heure d'hiver.
+on:
+  schedule:
+    - cron: "20 6 * * *"
+    - cron: "30 16 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Test : afficher le tweet sans le publier"
+        type: boolean
+        default: true
+
+jobs:
+  tweet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Publier le point du jour
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            python scripts/tweet.py --dry-run
+          else
+            python scripts/tweet.py
+          fi
